@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GotIt</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main id="app">
+      <header class="app-header">
+        <div class="brand">
+          <img src="icons/icon48.png" alt="" width="36" height="36">
+          <div><strong>GotIt</strong><span>לומדים מתוך ההקשר</span></div>
+        </div>
+        <button id="settings-button" class="icon-button" type="button" aria-label="פתיחת הגדרות" title="הגדרות">⚙</button>
+      </header>
+
+      <section id="loading-view" class="center-view" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p>טוען…</p>
+      </section>
+
+      <section id="auth-view" hidden>
+        <div class="intro">
+          <h1>המילים שפוגשים בדרך,<br>נשארות איתך.</h1>
+          <p>שמור מילה יחד עם המשפט, האתר והתרגום שלה — ורכז הכול ב־GotIt.</p>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="כניסה או הרשמה">
+          <button id="login-tab" class="active" type="button" role="tab" aria-selected="true">כניסה</button>
+          <button id="register-tab" type="button" role="tab" aria-selected="false">הרשמה</button>
+        </div>
+        <form id="auth-form" novalidate>
+          <label>אימייל<input id="email" type="email" autocomplete="email" dir="ltr" required></label>
+          <label>סיסמה<input id="password" type="password" autocomplete="current-password" minlength="12" required></label>
+          <button id="email-submit" class="primary full" type="submit">כניסה</button>
+        </form>
+        <div class="separator"><span>או</span></div>
+        <button id="google-button" class="google full" type="button">
+          <span aria-hidden="true" class="google-mark">G</span> המשך עם Google
+        </button>
+        <p class="privacy-note">התוסף שומר תוכן רק כשמבקשים ממנו. מפתחות שירותי התרגום לעולם אינם נשמרים בדפדפן.</p>
+      </section>
+
+      <section id="capture-view" hidden>
+        <div class="account-row">
+          <span id="account-email" dir="ltr"></span>
+          <button id="logout-button" class="text-button" type="button">יציאה</button>
+        </div>
+
+        <div id="capture-editor">
+          <section class="source-card">
+            <div class="field-heading">
+              <span>מילה או ביטוי</span>
+              <button id="edit-source" class="mini-edit" type="button">סיום עריכה</button>
+            </div>
+            <div id="source-display" class="source-display" dir="auto" hidden></div>
+            <label id="source-editor" class="source-editor">
+              <textarea id="source-text" rows="2" maxlength="500" dir="auto" placeholder="סמן טקסט בעמוד או הקלד כאן"></textarea>
+            </label>
+          </section>
+          <section id="translation-card" class="translation-card" hidden>
+            <div class="field-heading">
+              <span>תרגום</span>
+              <div class="translation-actions">
+                <button id="ai-translation" class="ai-translation" type="button" aria-pressed="false">✦ תרגום AI</button>
+                <button id="edit-translation" class="mini-edit" type="button">ערוך תרגום</button>
+              </div>
+            </div>
+            <div id="translation-display" class="translation-display" dir="auto"></div>
+            <label id="translation-editor" class="translation-editor" hidden>
+              <textarea id="translation-text" rows="2" maxlength="1000" dir="auto" required></textarea>
+            </label>
+            <div class="lexical-line">
+              <div id="lexical-summary" class="lexical-summary">
+                <span id="item-type-display"></span>
+                <span id="part-of-speech-separator" class="meta-dot" aria-hidden="true">·</span>
+                <span id="part-of-speech-display" dir="auto"></span>
+              </div>
+              <button id="edit-lexical" class="mini-edit" type="button">עריכת פרטים</button>
+            </div>
+            <div id="lexical-editor" class="lexical-editor" hidden>
+              <label>סוג המילה
+                <select id="item-type" aria-label="סוג הפריט">
+                  <option value="word">מילה</option><option value="phrase">ביטוי</option>
+                  <option value="expression">ניב</option><option value="phrasal_verb">Phrasal verb</option>
+                  <option value="other">אחר</option>
+                </select>
+              </label>
+              <label>חלק דיבר
+                <input id="part-of-speech" maxlength="100" dir="auto" aria-label="חלק דיבר">
+              </label>
+            </div>
+            <div id="candidate-explanation" class="candidate-explanation" hidden>
+              <span>הסבר קצר</span>
+              <p id="explanation-text" dir="auto"></p>
+            </div>
+            <div id="phonetic-row" class="phonetic-row" hidden>
+              <span id="phonetic-text" dir="ltr"></span>
+              <button id="speak-button" type="button" class="icon-button" aria-label="השמעת המילה">🔊</button>
+            </div>
+          </section>
+          <div class="button-row">
+            <button id="read-selection" class="secondary" type="button">קליטת הסימון מהעמוד</button>
+            <button id="preview-button" class="primary" type="button">הצגת תרגום</button>
+          </div>
+          <article id="context-card" class="context-card" hidden>
+            <div class="eyebrow">ההקשר שיישמר</div>
+            <textarea id="sentence-text" rows="3" maxlength="4000" dir="auto" aria-label="משפט ההקשר"></textarea>
+            <div id="page-meta" class="page-meta" dir="auto"></div>
+          </article>
+        </div>
+
+        <form id="preview-form" hidden>
+          <details class="capture-settings">
+            <summary>שפות והגדרות</summary>
+            <div class="language-grid">
+              <label>שפת מקור<input id="source-language" list="languages" maxlength="64" dir="ltr" required></label>
+              <span aria-hidden="true">←</span>
+              <label>שפת תרגום<input id="target-language" list="languages" maxlength="64" dir="ltr" required></label>
+            </div>
+          </details>
+          <datalist id="languages">
+            <option value="en">English</option><option value="he">עברית</option>
+            <option value="ar">العربية</option><option value="es">Español</option>
+            <option value="fr">Français</option><option value="de">Deutsch</option>
+            <option value="it">Italiano</option><option value="pt">Português</option>
+            <option value="ru">Русский</option><option value="uk">Українська</option>
+            <option value="zh">中文</option><option value="ja">日本語</option>
+            <option value="ko">한국어</option><option value="tr">Türkçe</option>
+          </datalist>
+
+          <div hidden aria-hidden="true">
+            <input type="radio" name="method" value="auto" checked>
+            <input type="radio" name="method" value="dictionary">
+            <input type="radio" name="method" value="ai">
+          </div>
+
+          <div id="preview-warning" class="notice" hidden></div>
+          <fieldset id="candidate-fieldset" class="candidate-list" hidden>
+            <legend>בחירת משמעות</legend>
+            <div id="candidates"></div>
+          </fieldset>
+
+          <fieldset id="sense-fieldset" class="sense-list" hidden>
+            <legend>כבר שמרת את הכתיב הזה — לאיזו משמעות לשייך?</legend>
+            <div id="senses"></div>
+            <label class="sense-option new-sense"><input type="radio" name="sense" value="new"><span><strong>משמעות חדשה</strong><small>צור פריט לימוד נוסף</small></span></label>
+          </fieldset>
+
+          <div class="save-row">
+            <button id="cancel-button" class="text-button" type="button">ביטול</button>
+            <button id="save-button" class="primary" type="submit">שמירה ב־GotIt</button>
+          </div>
+        </form>
+
+        <section id="success-view" class="success-view" hidden aria-live="polite">
+          <div class="success-icon" aria-hidden="true">✓</div>
+          <h2 id="success-title">נשמר ב־GotIt</h2>
+          <p id="success-details"></p>
+          <button id="save-another" class="secondary" type="button">שמירת מילה נוספת</button>
+        </section>
+      </section>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

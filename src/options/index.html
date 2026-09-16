@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>הגדרות GotIt</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icons/icon128.png" alt="" width="56" height="56">
+        <div><h1>הגדרות GotIt</h1><p>התאמה אישית של שמירת מילים מהדפדפן</p></div>
+      </header>
+
+      <section class="card">
+        <h2>תרגום</h2>
+        <p class="description">ההעדפות האלה נשמרות בפרופיל GotIt ומשמשות גם במכשירים אחרים.</p>
+        <div id="signed-out-notice" class="notice" hidden>כדי לשנות העדפות תרגום יש להתחבר דרך חלונית התוסף.</div>
+        <form id="profile-form">
+          <label>שפת תרגום מועדפת
+            <input id="target-language" list="languages" maxlength="64" dir="ltr" placeholder="לדוגמה: he">
+          </label>
+          <datalist id="languages">
+            <option value="en">English</option><option value="he">עברית</option>
+            <option value="ar">العربية</option><option value="es">Español</option>
+            <option value="fr">Français</option><option value="de">Deutsch</option>
+            <option value="it">Italiano</option><option value="pt">Português</option>
+            <option value="ru">Русский</option><option value="zh">中文</option>
+            <option value="ja">日本語</option><option value="ko">한국어</option>
+          </datalist>
+          <label>שיטת תרגום מועדפת
+            <select id="translation-method">
+              <option value="auto">אוטומטי — השרת בוחר</option>
+              <option value="dictionary">מילון / Translation API</option>
+              <option value="ai">AI — תרגום לפי ההקשר</option>
+            </select>
+          </label>
+          <button id="save-profile" class="primary" type="submit">שמירת העדפות</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>התנהגות התוסף</h2>
+        <label class="toggle-row">
+          <span><strong>תרגום בלחיצה כפולה וכפתור ליד סימון</strong><small>מציג תרגום מיד בלחיצה כפולה ופעולת GotIt ליד טקסט מסומן. דורש הרשאת גישה לאתרים.</small></span>
+          <input id="floating-action" type="checkbox" role="switch">
+        </label>
+        <label class="toggle-row">
+          <span><strong>סגירת החלונית לאחר שמירה</strong><small>החלונית תיסגר אוטומטית אחרי אישור השמירה.</small></span>
+          <input id="auto-close" type="checkbox" role="switch">
+        </label>
+      </section>
+
+      <section class="card privacy">
+        <h2>פרטיות ואבטחה</h2>
+        <ul>
+          <li>GotIt שומר תוכן רק בעקבות פעולה מפורשת שלך.</li>
+          <li>נשמרים המילה או הביטוי, המשפט, כותרת העמוד וה־URL — לא ה־HTML או העמוד המלא.</li>
+          <li>מפתחות Google Translate ו־Anthropic נמצאים רק בשרת ואינם כלולים בתוסף.</li>
+          <li>קוד שרץ בתוך אתרי אינטרנט אינו יכול לקרוא את אסימוני ההתחברות.</li>
+        </ul>
+      </section>
+      <div id="status" role="status" aria-live="polite"></div>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
