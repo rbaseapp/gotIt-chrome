@@ -7,6 +7,7 @@ import type {
   ExtensionSettings,
   GotItProfile,
   InlinePreviewResult,
+  InlineLexicalDetails,
   PublicSession,
   ResponseEnvelope,
   TranslationMethod
@@ -20,7 +21,13 @@ export type ExtensionRequest =
   | { type: 'GET_ACTIVE_CONTEXT'; selectedText?: string }
   | { type: 'GET_CONTENT_CONFIG' }
   | { type: 'CONTENT_CAPTURE'; context: CaptureContext }
-  | { type: 'INLINE_PREVIEW'; context: CaptureContext }
+  | { type: 'INLINE_PREVIEW'; context: CaptureContext; translationMethod?: TranslationMethod }
+  | {
+      type: 'INLINE_DETAILS';
+      context: CaptureContext;
+      sourceLanguageCode?: string;
+      translationLanguageCode?: string;
+    }
   | { type: 'INLINE_SAVE'; inlineCaptureId: string }
   | { type: 'PREVIEW_CAPTURE'; input: PreviewRequest }
   | { type: 'SAVE_CAPTURE'; input: CaptureSaveInput; eventId: string }
@@ -57,6 +64,7 @@ export interface ResponseMap {
   GET_CONTENT_CONFIG: { floatingAction: boolean };
   CONTENT_CAPTURE: null;
   INLINE_PREVIEW: InlinePreviewResult;
+  INLINE_DETAILS: InlineLexicalDetails | null;
   INLINE_SAVE: CaptureResult;
   PREVIEW_CAPTURE: CapturePreview;
   SAVE_CAPTURE: CaptureResult;
@@ -182,7 +190,30 @@ export function parseRequest(value: unknown): ExtensionRequest | null {
     case 'CONTENT_CAPTURE':
       return hasOnlyKeys(value, ['type', 'context']) && isCaptureContext(value.context) ? { type: value.type, context: value.context } : null;
     case 'INLINE_PREVIEW':
-      return hasOnlyKeys(value, ['type', 'context']) && isCaptureContext(value.context) ? { type: value.type, context: value.context } : null;
+      if (
+        !hasOnlyKeys(value, ['type', 'context', 'translationMethod']) ||
+        !isCaptureContext(value.context) ||
+        (value.translationMethod !== undefined && !['auto', 'dictionary', 'ai'].includes(String(value.translationMethod)))
+      ) return null;
+      return value.translationMethod === undefined
+        ? { type: value.type, context: value.context }
+        : { type: value.type, context: value.context, translationMethod: value.translationMethod as TranslationMethod };
+    case 'INLINE_DETAILS':
+      if (
+        !hasOnlyKeys(value, ['type', 'context', 'sourceLanguageCode', 'translationLanguageCode']) ||
+        !isCaptureContext(value.context) ||
+        !optionalString(value.sourceLanguageCode) ||
+        !optionalString(value.translationLanguageCode)
+      ) return null;
+      {
+        const detailsRequest: Extract<ExtensionRequest, { type: 'INLINE_DETAILS' }> = {
+          type: value.type,
+          context: value.context
+        };
+        if (typeof value.sourceLanguageCode === 'string') detailsRequest.sourceLanguageCode = value.sourceLanguageCode;
+        if (typeof value.translationLanguageCode === 'string') detailsRequest.translationLanguageCode = value.translationLanguageCode;
+        return detailsRequest;
+      }
     case 'INLINE_SAVE':
       return hasOnlyKeys(value, ['type', 'inlineCaptureId']) &&
         typeof value.inlineCaptureId === 'string' &&

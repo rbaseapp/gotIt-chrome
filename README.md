@@ -12,7 +12,8 @@ Production-oriented Manifest V3 client for capturing a word or phrase together w
 - Optional instant double-click translation with separate quick-save and review actions, plus a floating action beside selected text, enabled only after an explicit optional host-permission grant.
 - Sentence, title, URL, language hint and timestamp extraction without sending page HTML.
 - Server preview using `auto`, `dictionary` or `ai`; no direct provider requests.
-- Source and translation shown prominently as read-only by default with explicit editing, automatic item-type/part-of-speech detection, provider candidates and pronunciation playback.
+- Source and translation shown prominently as read-only by default with explicit editing, inline item-type/part-of-speech details, a concise AI explanation, provider candidates and pronunciation playback.
+- A compact AI action beside the translation replaces the full translation-method picker; languages stay available in a collapsed settings section.
 - Existing-sense merge or explicit creation of a new sense.
 - Idempotent save with a stable UUID across safe network/5xx retries.
 - RTL/LTR-safe fields, keyboard focus, accessible labels and reduced-motion support.

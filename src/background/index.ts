@@ -6,6 +6,7 @@ import type {
   CapturePreview,
   CaptureSaveInput,
   ClientError,
+  InlineLexicalDetails,
   ResponseEnvelope
 } from '../shared/types';
 import { getProfile, patchProfile, previewCapture, saveCapture } from './api';
@@ -192,6 +193,7 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
         pageUrl: captured.pageUrl
       }
     };
+    if (request.translationMethod) input.translationMethod = request.translationMethod;
     if (captured.documentLanguageHint) input.documentLanguageHint = captured.documentLanguageHint;
     let preview = await previewCapture(input);
     const targetLanguage = uiLanguage();
@@ -200,6 +202,32 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
       preview = await previewCapture(input);
     }
     return { preview, inlineCaptureId: await storeInline(captured, preview) };
+  }
+  if (request.type === 'INLINE_DETAILS') {
+    if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
+    const captured = request.context;
+    const input: Parameters<typeof previewCapture>[0] = {
+      selectedText: captured.selectedText,
+      sourceText: captured.selectedText,
+      translationMethod: 'ai',
+      context: {
+        sentenceText: captured.sentenceText,
+        paragraphText: null,
+        pageTitle: captured.pageTitle,
+        pageUrl: captured.pageUrl
+      }
+    };
+    if (request.sourceLanguageCode) input.sourceLanguageCode = request.sourceLanguageCode;
+    else if (captured.documentLanguageHint) input.documentLanguageHint = captured.documentLanguageHint;
+    const targetLanguage = request.translationLanguageCode ?? uiLanguage();
+    if (targetLanguage) input.translationLanguageCode = targetLanguage;
+    const candidate = (await previewCapture(input)).enrichment.candidates[0];
+    if (!candidate) return null;
+    return {
+      partOfSpeech: candidate.partOfSpeech,
+      explanation: candidate.explanation?.trim() || null,
+      variants: candidate.variants
+    } satisfies InlineLexicalDetails;
   }
   if (request.type === 'INLINE_SAVE') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
