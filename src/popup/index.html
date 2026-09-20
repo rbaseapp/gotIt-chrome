@@ -58,27 +58,6 @@
             <label id="source-editor" class="source-editor">
               <textarea id="source-text" rows="2" maxlength="500" dir="auto" placeholder="סמן טקסט בעמוד או הקלד כאן"></textarea>
             </label>
-          </section>
-          <section id="translation-card" class="translation-card" hidden>
-            <div class="field-heading">
-              <span>תרגום</span>
-              <div class="translation-actions">
-                <button id="ai-translation" class="ai-translation" type="button" aria-pressed="false">✦ תרגום AI</button>
-                <button id="edit-translation" class="mini-edit" type="button">ערוך תרגום</button>
-              </div>
-            </div>
-            <div id="translation-display" class="translation-display" dir="auto"></div>
-            <label id="translation-editor" class="translation-editor" hidden>
-              <textarea id="translation-text" rows="2" maxlength="1000" dir="auto" required></textarea>
-            </label>
-            <div class="lexical-line">
-              <div id="lexical-summary" class="lexical-summary">
-                <span id="item-type-display"></span>
-                <span id="part-of-speech-separator" class="meta-dot" aria-hidden="true">·</span>
-                <span id="part-of-speech-display" dir="auto"></span>
-              </div>
-              <button id="edit-lexical" class="mini-edit" type="button">עריכת פרטים</button>
-            </div>
             <div id="lexical-editor" class="lexical-editor" hidden>
               <label>סוג המילה
                 <select id="item-type" aria-label="סוג הפריט">
@@ -91,18 +70,55 @@
                 <input id="part-of-speech" maxlength="100" dir="auto" aria-label="חלק דיבר">
               </label>
             </div>
+          </section>
+          <section id="translation-card" class="translation-card" hidden>
+            <div class="field-heading">
+              <span>תרגום</span>
+              <div class="translation-actions">
+                <button id="save-button" class="icon-action save-header-button" type="submit" form="preview-form" aria-label="שמירה ב־GotIt" title="שמירה ב־GotIt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="ai-translation" class="icon-action text-action ai-translation" type="button" aria-label="תרגם עם AI" title="תרגם עם AI" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.45 4.05L17.5 8.5l-4.05 1.45L12 14l-1.45-4.05L6.5 8.5l4.05-1.45L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z" fill="currentColor"/></svg>
+                  <span>תרגם עם AI</span>
+                </button>
+                <button id="edit-translation" class="icon-action text-action toggle-icon" type="button" aria-label="עריכת התרגום" title="עריכת התרגום" aria-pressed="false">
+                  <svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                  <svg class="done-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="action-label">ערוך</span>
+                </button>
+              </div>
+            </div>
+            <div class="translation-value-row">
+              <div id="translation-display" class="translation-display" dir="auto"></div>
+              <label id="translation-editor" class="translation-editor" hidden>
+                <textarea id="translation-text" rows="2" maxlength="1000" dir="auto" required></textarea>
+              </label>
+            </div>
+            <fieldset id="candidate-fieldset" class="candidate-list" hidden>
+              <legend>בחירת פירוש</legend>
+              <div id="candidates"></div>
+            </fieldset>
             <div id="candidate-explanation" class="candidate-explanation" hidden>
               <span>הסבר קצר</span>
               <p id="explanation-text" dir="auto"></p>
             </div>
             <div id="phonetic-row" class="phonetic-row" hidden>
-              <span id="phonetic-text" dir="ltr"></span>
-              <button id="speak-button" type="button" class="icon-button" aria-label="השמעת המילה">🔊</button>
+              <span id="phonetic-text" dir="auto"></span>
+              <button id="speak-button" type="button" class="icon-action" aria-label="השמעת המילה" title="השמעת המילה">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3.2l4.3 3.5v-11L7.2 10H4Z" fill="currentColor"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.7 6.7a7.5 7.5 0 0 1 0 10.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </button>
             </div>
           </section>
           <div class="button-row">
-            <button id="read-selection" class="secondary" type="button">קליטת הסימון מהעמוד</button>
-            <button id="preview-button" class="primary" type="button">הצגת תרגום</button>
+            <button id="read-selection" class="secondary capture-action" type="button" title="טוען את הסימון הנוכחי מהאתר ומתרגם אותו">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H5a1 1 0 0 0-1 1v3M16 4h3a1 1 0 0 1 1 1v3M8 20H5a1 1 0 0 1-1-1v-3M16 20h3a1 1 0 0 0 1-1v-3M7 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>טען ותרגם סימון</span>
+            </button>
+            <button id="preview-button" class="primary capture-action" type="button" title="מתרגם עם Google את המילה או הביטוי שמופיעים בשדה למעלה">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2c0 4-2 7-5 9M6 10c1.5 2 3.4 3.5 5.8 4.4M14 10l4 10M12.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>תרגם עם Google</span>
+            </button>
           </div>
           <article id="context-card" class="context-card" hidden>
             <div class="eyebrow">ההקשר שיישמר</div>
@@ -137,21 +153,12 @@
           </div>
 
           <div id="preview-warning" class="notice" hidden></div>
-          <fieldset id="candidate-fieldset" class="candidate-list" hidden>
-            <legend>בחירת משמעות</legend>
-            <div id="candidates"></div>
-          </fieldset>
-
           <fieldset id="sense-fieldset" class="sense-list" hidden>
             <legend>כבר שמרת את הכתיב הזה — לאיזו משמעות לשייך?</legend>
             <div id="senses"></div>
             <label class="sense-option new-sense"><input type="radio" name="sense" value="new"><span><strong>משמעות חדשה</strong><small>צור פריט לימוד נוסף</small></span></label>
           </fieldset>
 
-          <div class="save-row">
-            <button id="cancel-button" class="text-button" type="button">ביטול</button>
-            <button id="save-button" class="primary" type="submit">שמירה ב־GotIt</button>
-          </div>
         </form>
 
         <section id="success-view" class="success-view" hidden aria-live="polite">

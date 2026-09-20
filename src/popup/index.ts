@@ -1,6 +1,7 @@
 import { sendRequest, type ExtensionRequest, type ResponseMap } from '../shared/messages';
 import { inferItemType as inferDetectedItemType } from '../shared/item-type';
 import { nextPhase } from '../shared/state';
+import { effectiveTranslationMethod } from '../shared/translation';
 import type {
   BootstrapData,
   CaptureContext,
@@ -8,7 +9,6 @@ import type {
   CapturePreview,
   ClientError,
   EnrichmentCandidate,
-  ExtensionSettings,
   GotItProfile,
   PublicSession,
   TranslationMethod
@@ -43,13 +43,8 @@ const translationEditor = element<HTMLElement>('translation-editor');
 const editTranslation = element<HTMLButtonElement>('edit-translation');
 const aiTranslation = element<HTMLButtonElement>('ai-translation');
 const itemType = element<HTMLSelectElement>('item-type');
-const itemTypeDisplay = element<HTMLElement>('item-type-display');
 const partOfSpeech = element<HTMLInputElement>('part-of-speech');
-const partOfSpeechDisplay = element<HTMLElement>('part-of-speech-display');
-const partOfSpeechSeparator = element<HTMLElement>('part-of-speech-separator');
-const lexicalSummary = element<HTMLElement>('lexical-summary');
 const lexicalEditor = element<HTMLElement>('lexical-editor');
-const editLexical = element<HTMLButtonElement>('edit-lexical');
 const candidateExplanation = element<HTMLElement>('candidate-explanation');
 const explanationText = element<HTMLElement>('explanation-text');
 const phoneticRow = element<HTMLElement>('phonetic-row');
@@ -65,19 +60,18 @@ const previewButton = element<HTMLButtonElement>('preview-button');
 let phase: CapturePhase = 'IDLE';
 let session: PublicSession | null = null;
 let profile: GotItProfile | null = null;
-let settings: ExtensionSettings = { floatingAction: false, autoCloseAfterSave: false };
 let context: CaptureContext | null = null;
 let preview: CapturePreview | null = null;
 let selectedCandidate: EnrichmentCandidate | null = null;
 let saveEventId: string | null = null;
+let savedLearningItemId: string | null = null;
 let previewFingerprint = '';
 let authMode: 'login' | 'register' = 'login';
 let statusTimer: number | null = null;
 let sourceEditing = true;
 let translationEditing = false;
-let lexicalEditing = false;
 let itemTypeManuallyEdited = false;
-let standardMethod: 'auto' | 'dictionary' = 'auto';
+let standardMethod: 'auto' | 'dictionary' = 'dictionary';
 
 async function request<K extends keyof ResponseMap>(
   value: Extract<ExtensionRequest, { type: K }>
@@ -112,9 +106,10 @@ function userMessage(error: unknown): string {
     CAPTURE_TEMPORARILY_UNAVAILABLE: 'השמירה אינה זמינה כרגע. אפשר לנסות שוב בבטחה.',
     INVALID_MESSAGE: 'הבקשה מהתוסף אינה תקינה.'
   };
-  const base = code === 'GOOGLE_IDENTITY_FAILED' && isClientError(error)
-    ? `Chrome לא הצליח לפתוח התחברות Google: ${error.message}`
-    : messages[code] ?? 'משהו לא הסתדר. נסה שוב.';
+  const base =
+    code === 'GOOGLE_IDENTITY_FAILED' && isClientError(error)
+      ? `Chrome לא הצליח לפתוח התחברות Google: ${error.message}`
+      : (messages[code] ?? 'משהו לא הסתדר. נסה שוב.');
   return isClientError(error) && error.requestId ? `${base} (${error.requestId})` : base;
 }
 
@@ -127,7 +122,31 @@ function showStatus(message: string, error = false): void {
 }
 
 function setBusy(button: HTMLButtonElement, busy: boolean, label?: string): void {
-  if (busy) button.dataset.label = button.textContent ?? '';
+  if (button.classList.contains('capture-action')) {
+    const text = button.querySelector<HTMLElement>('span');
+    if (text) {
+      if (busy && !button.disabled) button.dataset.label = text.textContent ?? '';
+      text.textContent = busy ? (label ?? 'טוען…') : (button.dataset.label ?? text.textContent);
+    }
+    button.disabled = busy;
+    return;
+  }
+  if (button.classList.contains('icon-action')) {
+    if (busy) {
+      button.dataset.label = button.getAttribute('aria-label') ?? '';
+      button.dataset.busyLabel = label ?? 'טוען…';
+      button.setAttribute('aria-label', button.dataset.busyLabel);
+      button.setAttribute('title', button.dataset.busyLabel);
+    } else if (button.getAttribute('aria-label') === button.dataset.busyLabel) {
+      const restoredLabel = button.dataset.label ?? '';
+      button.setAttribute('aria-label', restoredLabel);
+      button.setAttribute('title', restoredLabel);
+    }
+    button.disabled = busy;
+    button.classList.toggle('is-busy', busy);
+    return;
+  }
+  if (busy && !button.disabled) button.dataset.label = button.textContent ?? '';
   button.disabled = busy;
   button.textContent = busy ? (label ?? 'טוען…') : (button.dataset.label ?? button.textContent);
 }
@@ -139,13 +158,19 @@ function showView(view: 'auth' | 'capture'): void {
 }
 
 function canonicalLanguage(value: string): string | null {
-  try { return Intl.getCanonicalLocales(value.trim())[0] ?? null; } catch { return null; }
+  try {
+    return Intl.getCanonicalLocales(value.trim())[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function isHebrewLanguage(value: string | null | undefined): boolean {
+  return value?.split('-')[0]?.toLowerCase() === 'he';
 }
 
 function profileTargetLanguage(): string {
-  return profile?.defaultTranslationLanguage
-    ?? canonicalLanguage(chrome.i18n.getUILanguage())?.split('-')[0]
-    ?? 'en';
+  return profile?.defaultTranslationLanguage ?? canonicalLanguage(chrome.i18n.getUILanguage())?.split('-')[0] ?? 'en';
 }
 
 function currentMethod(): TranslationMethod {
@@ -159,13 +184,16 @@ function setMethod(method: TranslationMethod): void {
   if (input) input.checked = true;
   const aiActive = method === 'ai';
   aiTranslation.setAttribute('aria-pressed', String(aiActive));
-  aiTranslation.textContent = aiActive ? '✦ AI פעיל' : '✦ תרגום AI';
+  const label = aiActive ? 'תרגום AI פעיל' : 'תרגם עם AI';
+  aiTranslation.setAttribute('aria-label', label);
+  aiTranslation.setAttribute('title', label);
 }
 
 function setSourceEditing(editing: boolean): void {
   sourceEditing = editing;
   sourceEditor.hidden = !editing;
   sourceDisplay.hidden = editing;
+  lexicalEditor.hidden = !editing || !preview;
   editSource.textContent = editing ? 'סיום עריכה' : 'ערוך מילה';
   if (!editing) {
     sourceDisplay.textContent = sourceText.value.normalize('NFKC').replace(/\s+/gu, ' ').trim();
@@ -195,39 +223,25 @@ function setContext(next: CaptureContext): void {
   resetSaveIntent();
 }
 
-const itemTypeLabels: Record<string, string> = {
-  word: 'מילה',
-  phrase: 'ביטוי',
-  expression: 'ניב / Expression',
-  phrasal_verb: 'Phrasal verb',
-  other: 'אחר'
-};
-
-function updateDetectedDisplays(): void {
-  itemTypeDisplay.textContent = itemTypeLabels[itemType.value] ?? itemType.value;
-  const detectedPart = partOfSpeech.value.trim();
-  partOfSpeechDisplay.textContent = detectedPart;
-  partOfSpeechDisplay.hidden = !detectedPart;
-  partOfSpeechSeparator.hidden = !detectedPart;
-}
-
 function inferItemType(force = false): void {
   if (force || !itemTypeManuallyEdited) {
     itemType.value = inferDetectedItemType(sourceText.value, partOfSpeech.value);
   }
-  updateDetectedDisplays();
 }
 
 function setTranslationEditing(editing: boolean): void {
   translationEditing = editing;
   translationEditor.hidden = !editing;
   translationDisplay.hidden = editing;
-  editTranslation.textContent = editing ? 'סיום עריכה' : 'ערוך תרגום';
+  editTranslation.setAttribute('aria-pressed', String(editing));
+  editTranslation.setAttribute('aria-label', editing ? 'סיום עריכת התרגום' : 'עריכת התרגום');
+  editTranslation.setAttribute('title', editing ? 'סיום עריכת התרגום' : 'עריכת התרגום');
+  const label = editTranslation.querySelector<HTMLElement>('.action-label');
+  if (label) label.textContent = editing ? 'סיום' : 'ערוך';
   if (!editing) {
     translationDisplay.textContent = translationText.value.trim();
     selectStrongSenseIfPossible();
-  }
-  else translationText.focus();
+  } else translationText.focus();
 }
 
 function setTranslationValue(value: string, editing = false): void {
@@ -237,19 +251,9 @@ function setTranslationValue(value: string, editing = false): void {
   setTranslationEditing(editing);
 }
 
-function setLexicalEditing(editing: boolean): void {
-  lexicalEditing = editing;
-  lexicalEditor.hidden = !editing;
-  lexicalSummary.hidden = editing;
-  editLexical.textContent = editing ? 'סיום עריכה' : 'עריכת פרטים';
-  if (!editing) {
-    inferItemType();
-    updateDetectedDisplays();
-  }
-}
-
 function resetSaveIntent(): void {
   saveEventId = null;
+  successView.hidden = true;
 }
 
 function resetCapture(keepContext = false): void {
@@ -258,6 +262,7 @@ function resetCapture(keepContext = false): void {
   selectedCandidate = null;
   previewFingerprint = '';
   saveEventId = null;
+  savedLearningItemId = null;
   previewForm.hidden = true;
   successView.hidden = true;
   captureEditor.hidden = false;
@@ -269,11 +274,8 @@ function resetCapture(keepContext = false): void {
   translationCard.hidden = true;
   setSourceValue('', true);
   translationEditing = false;
-  lexicalEditing = false;
   itemTypeManuallyEdited = false;
   lexicalEditor.hidden = true;
-  lexicalSummary.hidden = false;
-  editLexical.textContent = 'עריכת פרטים';
   partOfSpeech.value = '';
   candidateExplanation.hidden = true;
   explanationText.textContent = '';
@@ -308,7 +310,9 @@ function makeCandidateOption(candidate: EnrichmentCandidate, index: number): HTM
   strong.dir = 'auto';
   strong.textContent = candidate.text;
   const detail = document.createElement('small');
-  const parts = [candidate.partOfSpeech, candidate.variants.length ? candidate.variants.join(' · ') : null].filter(Boolean);
+  const parts = [candidate.partOfSpeech, candidate.variants.length ? candidate.variants.join(' · ') : null].filter(
+    Boolean
+  );
   detail.dir = 'auto';
   detail.textContent = parts.join(' — ');
   wrapper.append(strong);
@@ -322,12 +326,14 @@ function selectCandidate(candidate: EnrichmentCandidate): void {
   selectedCandidate = candidate;
   setTranslationValue(candidate.text);
   partOfSpeech.value = candidate.partOfSpeech ?? '';
-  setLexicalEditing(false);
   itemTypeManuallyEdited = false;
   inferItemType(true);
   explanationText.textContent = candidate.explanation?.trim() ?? '';
   candidateExplanation.hidden = !explanationText.textContent;
-  phoneticText.textContent = [candidate.phoneticText, candidate.phoneticScheme].filter(Boolean).join(' · ');
+  if (isHebrewLanguage(preview?.sourceLanguageCode) && candidate.phoneticText) {
+    sourceDisplay.textContent = candidate.phoneticText;
+  }
+  phoneticText.textContent = candidate.phoneticText ?? '';
   phoneticRow.hidden = !candidate.phoneticText;
   resetSaveIntent();
   selectStrongSenseIfPossible();
@@ -349,6 +355,8 @@ function selectStrongSenseIfPossible(): void {
 }
 
 function renderPreview(result: CapturePreview): void {
+  savedLearningItemId = null;
+  successView.hidden = true;
   preview = result;
   setSourceValue(result.sourceText);
   sourceLanguage.value = result.sourceLanguageCode ?? '';
@@ -356,7 +364,9 @@ function renderPreview(result: CapturePreview): void {
   setMethod(result.translationMethod);
   previewFingerprint = lexicalFingerprint();
   candidatesElement.replaceChildren();
-  result.enrichment.candidates.forEach((candidate, index) => candidatesElement.append(makeCandidateOption(candidate, index)));
+  result.enrichment.candidates.forEach((candidate, index) =>
+    candidatesElement.append(makeCandidateOption(candidate, index))
+  );
   candidateFieldset.hidden = result.enrichment.candidates.length <= 1;
   if (result.enrichment.candidates[0]) {
     const firstRadio = candidatesElement.querySelector<HTMLInputElement>('input[type="radio"]');
@@ -366,7 +376,6 @@ function renderPreview(result: CapturePreview): void {
     selectedCandidate = null;
     setTranslationValue('', true);
     partOfSpeech.value = '';
-    updateDetectedDisplays();
     candidateExplanation.hidden = true;
     explanationText.textContent = '';
     phoneticRow.hidden = true;
@@ -397,13 +406,15 @@ function renderPreview(result: CapturePreview): void {
   const warnings: string[] = [];
   if (result.requiresLanguageSelection) warnings.push('יש לבחור שפת מקור ושפת תרגום.');
   if (result.enrichment.status === 'not_configured') {
-    warnings.push(result.translationMethod === 'ai'
-      ? 'תרגום AI אינו מוגדר במלואו בשרת. יש להשלים ב־Render מפתח Anthropic, שם מודל וסוד חתימה, ולאחר מכן לבצע Deploy חדש.'
-      : 'ספק התרגום האוטומטי עדיין לא הוגדר בשרת. אפשר להזין תרגום ידנית או להגדיר Google Cloud Translation / Claude ב־Render.');
+    warnings.push(
+      result.translationMethod === 'ai'
+        ? 'תרגום AI אינו מוגדר במלואו בשרת. יש להשלים ב־Render מפתח Anthropic, שם מודל וסוד חתימה, ולאחר מכן לבצע Deploy חדש.'
+        : 'ספק התרגום האוטומטי עדיין לא הוגדר בשרת. אפשר להזין תרגום ידנית או להגדיר Google Cloud Translation / Claude ב־Render.'
+    );
+  } else if (result.enrichment.status === 'unavailable' && result.translationMethod === 'ai') {
+    warnings.push(aiFailureMessage(result));
   } else if (result.enrichment.status === 'unavailable') {
-    warnings.push(result.translationMethod === 'ai'
-      ? 'השרת ניסה להפעיל AI אך הבקשה נכשלה. יש לבדוק ב־Render שהמפתח פעיל, שהמודל קיים בחשבון ושבוצע Deploy לאחר שינוי משתני הסביבה.'
-      : 'שירות התרגום אינו זמין כרגע. אפשר לנסות שוב או להזין תרגום ידנית.');
+    warnings.push(googleFailureMessage(result));
   } else if (result.requiresManualTranslation) {
     warnings.push('שירות התרגום לא החזיר הצעה. אפשר להזין תרגום ידנית.');
   }
@@ -416,7 +427,11 @@ function renderPreview(result: CapturePreview): void {
 
 async function loadPreview(triggerButton = previewButton): Promise<void> {
   const text = sourceText.value.normalize('NFKC').replace(/\s+/gu, ' ').trim();
-  if (!text) { showStatus('יש להזין מילה או ביטוי.', true); sourceText.focus(); return; }
+  if (!text) {
+    showStatus('יש להזין מילה או ביטוי.', true);
+    sourceText.focus();
+    return;
+  }
   const sourceCode = canonicalLanguage(sourceLanguage.value);
   const targetCode = canonicalLanguage(targetLanguage.value) ?? profileTargetLanguage();
   const currentContext = context ?? {
@@ -430,12 +445,13 @@ async function loadPreview(triggerButton = previewButton): Promise<void> {
   if (!context) setContext(currentContext);
   currentContext.sentenceText = sentenceText.value.trim() || null;
   phase = nextPhase(phase, 'PREVIEW');
+  const requestedMethod = currentMethod();
   setBusy(triggerButton, true, triggerButton === aiTranslation ? 'AI מתרגם…' : 'מתרגם…');
   try {
     const input: Extract<ExtensionRequest, { type: 'PREVIEW_CAPTURE' }>['input'] = {
       selectedText: currentContext.selectedText,
       sourceText: text,
-      translationMethod: currentMethod(),
+      translationMethod: requestedMethod,
       context: {
         sentenceText: currentContext.sentenceText,
         paragraphText: null,
@@ -457,6 +473,36 @@ async function loadPreview(triggerButton = previewButton): Promise<void> {
   }
 }
 
+function aiFailureMessage(result: CapturePreview): string {
+  const codes = new Set(result.enrichment.warnings?.map((warning) => warning.code) ?? []);
+  if (codes.has('ENRICHMENT_AUTHENTICATION'))
+    return 'Anthropic דחה את מפתח ה־API שמוגדר בשרת. יש להחליף את המפתח ולבצע Deploy מחדש.';
+  if (codes.has('ENRICHMENT_BILLING')) return 'חשבון Anthropic דורש Billing או קרדיט API פעיל.';
+  if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Anthropic אין הרשאה ל־Workspace או למודל שנבחר.';
+  if (codes.has('ENRICHMENT_WORKSPACE'))
+    return 'ה־Workspace שמוגדר בשרת אינו תואם למפתח Anthropic. יש להסיר או לתקן את ANTHROPIC_WORKSPACE_ID.';
+  if (codes.has('ENRICHMENT_MODEL_ACCESS'))
+    return 'המודל שמוגדר בשרת אינו זמין למפתח Anthropic. יש לבדוק את AI_TRANSLATION_MODEL.';
+  if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Anthropic נוצלה כרגע. אפשר לנסות שוב בעוד רגע.';
+  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Anthropic דחה את מבנה הבקשה. יש לבדוק את הגדרות המודל בשרת.';
+  if (codes.has('ENRICHMENT_TIMEOUT')) return 'Anthropic לא השיב בתוך 20 שניות.';
+  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Anthropic החזיר תשובה שהשרת לא הצליח לעבד.';
+  if (codes.has('ENRICHMENT_UPSTREAM')) return 'הבקשה ל־Anthropic נכשלה לפני שהתקבלה תשובה תקינה.';
+  return 'השרת ניסה להפעיל AI אך הבקשה נכשלה. יש לבדוק ב־Render את הגדרות Anthropic.';
+}
+
+function googleFailureMessage(result: CapturePreview): string {
+  const codes = new Set(result.enrichment.warnings?.map((warning) => warning.code) ?? []);
+  if (codes.has('ENRICHMENT_AUTHENTICATION')) return 'Google דחה את מפתח התרגום שמוגדר בשרת.';
+  if (codes.has('ENRICHMENT_BILLING')) return 'שירות Google Translation דורש Billing פעיל.';
+  if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Google אין הרשאה ל־Cloud Translation API.';
+  if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Google Translation נוצלה כרגע.';
+  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Google דחה את בקשת התרגום או את קודי השפה.';
+  if (codes.has('ENRICHMENT_TIMEOUT')) return 'Google Translation לא השיב בזמן. אפשר ללחוץ שוב ולנסות מחדש.';
+  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Google החזיר תשובה שלא ניתן לעבד.';
+  return 'שירות Google Translation אינו זמין כרגע. אפשר ללחוץ שוב ולנסות מחדש.';
+}
+
 function candidateProofIsCurrent(candidate: EnrichmentCandidate): boolean {
   return Boolean(
     preview &&
@@ -476,6 +522,14 @@ function senseDecision() {
     : { mode: 'merge' as const, learningItemId: selected.value };
 }
 
+function showSavedState(title: string, details: string): void {
+  setSourceEditing(false);
+  setTranslationEditing(false);
+  successView.hidden = false;
+  element<HTMLElement>('success-title').textContent = title;
+  element<HTMLElement>('success-details').textContent = details;
+}
+
 async function save(): Promise<void> {
   if (!preview || !context) return;
   const sourceCode = canonicalLanguage(sourceLanguage.value);
@@ -488,12 +542,49 @@ async function save(): Promise<void> {
     showStatus('המילה או השפות השתנו. יש להציג תרגום מחדש לפני השמירה.', true);
     return;
   }
-  const decision = senseDecision();
-  if (!decision) { showStatus('יש לבחור משמעות קיימת או משמעות חדשה.', true); return; }
   const providerCandidate = selectedCandidate && candidateProofIsCurrent(selectedCandidate) ? selectedCandidate : null;
+  if (savedLearningItemId) {
+    phase = nextPhase(phase, 'SAVE');
+    setBusy(saveButton, true, 'שומר…');
+    try {
+      await request({
+        type: 'UPDATE_SAVED_ITEM',
+        learningItemId: savedLearningItemId,
+        patch: {
+          sourceText: sourceText.value.trim(),
+          sourceLanguageCode: sourceCode,
+          translationLanguageCode: targetCode,
+          itemType: itemType.value as 'word' | 'phrase' | 'expression' | 'phrasal_verb' | 'other',
+          partOfSpeech: partOfSpeech.value.trim() || null,
+          translation: {
+            text: translationText.value.trim(),
+            variants: providerCandidate?.variants ?? []
+          }
+        }
+      });
+      phase = nextPhase(phase, 'SAVED');
+      showSavedState('השינויים נשמרו', `“${sourceText.value.trim()}” · אפשר להמשיך לצפות ולערוך`);
+      showStatus('השינויים במילה נשמרו.');
+    } catch (error) {
+      phase = nextPhase(phase, isClientError(error) && error.code === 'OFFLINE' ? 'OFFLINE' : 'SAVE_ERROR');
+      showStatus(userMessage(error), true);
+    } finally {
+      setBusy(saveButton, false);
+    }
+    return;
+  }
+  const decision = senseDecision();
+  if (!decision) {
+    showStatus('יש לבחור משמעות קיימת או משמעות חדשה.', true);
+    return;
+  }
   const eventId = saveEventId ?? crypto.randomUUID();
   saveEventId = eventId;
-  const translation: { text: string; variants: string[]; selectionToken?: string } = {
+  const translation: {
+    text: string;
+    variants: string[];
+    selectionToken?: string;
+  } = {
     text: translationText.value.trim(),
     variants: providerCandidate?.variants ?? []
   };
@@ -526,13 +617,18 @@ async function save(): Promise<void> {
   try {
     const result = await request({ type: 'SAVE_CAPTURE', input, eventId });
     phase = nextPhase(phase, 'SAVED');
-    captureEditor.hidden = true;
-    previewForm.hidden = true;
-    successView.hidden = false;
-    element<HTMLElement>('success-title').textContent = result.outcome === 'merged' ? 'ההקשר נוסף למילה' : 'נשמר ב־GotIt';
-    const labels = { new: 'חדש', learning: 'בלמידה', reviewing: 'בחזרה', mastered: 'נלמד' };
-    element<HTMLElement>('success-details').textContent = `“${result.sourceText}” · ${labels[result.learningStatus]}`;
-    if (settings.autoCloseAfterSave) window.setTimeout(() => window.close(), 900);
+    savedLearningItemId = result.learningItemId;
+    const labels = {
+      new: 'חדש',
+      learning: 'בלמידה',
+      reviewing: 'בחזרה',
+      mastered: 'נלמד'
+    };
+    showSavedState(
+      result.outcome === 'merged' ? 'ההקשר נוסף למילה' : 'נשמר ב־GotIt',
+      `“${result.sourceText}” · ${labels[result.learningStatus]} · אפשר להמשיך לצפות ולערוך`
+    );
+    showStatus('המילה נשמרה. אפשר להמשיך לצפות בה או לערוך אותה.');
   } catch (error) {
     phase = nextPhase(phase, isClientError(error) && error.code === 'OFFLINE' ? 'OFFLINE' : 'SAVE_ERROR');
     showStatus(userMessage(error), true);
@@ -558,10 +654,12 @@ async function authenticated(nextSession: PublicSession): Promise<void> {
   try {
     const fresh = await request({ type: 'GET_BOOTSTRAP' });
     profile = fresh.profile;
-    settings = fresh.settings;
     targetLanguage.value = profileTargetLanguage();
-    setMethod(profile?.translationMethodPreference ?? 'auto');
-    if (fresh.pendingCapture) { setContext(fresh.pendingCapture); await loadPreview(); }
+    setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
+    if (fresh.pendingCapture) {
+      setContext(fresh.pendingCapture);
+      await loadPreview();
+    }
   } catch {
     // Authentication succeeded; capture actions will surface a precise API error if needed.
   }
@@ -570,15 +668,20 @@ async function authenticated(nextSession: PublicSession): Promise<void> {
 async function initialize(): Promise<void> {
   try {
     const data: BootstrapData = await request({ type: 'GET_BOOTSTRAP' });
-    settings = data.settings;
     profile = data.profile;
     session = data.session;
-    if (!session) { showView('auth'); return; }
+    if (!session) {
+      showView('auth');
+      return;
+    }
     element<HTMLElement>('account-email').textContent = session.user.email;
     targetLanguage.value = profileTargetLanguage();
-    setMethod(profile?.translationMethodPreference ?? 'auto');
+    setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
     showView('capture');
-    if (data.pendingCapture) { setContext(data.pendingCapture); await loadPreview(); }
+    if (data.pendingCapture) {
+      setContext(data.pendingCapture);
+      await loadPreview();
+    }
   } catch (error) {
     showView('auth');
     showStatus(userMessage(error), true);
@@ -586,14 +689,23 @@ async function initialize(): Promise<void> {
 }
 
 element<HTMLButtonElement>('settings-button').addEventListener('click', () => void chrome.runtime.openOptionsPage());
-element<HTMLButtonElement>('login-tab').addEventListener('click', () => { authMode = 'login'; renderAuthMode(); });
-element<HTMLButtonElement>('register-tab').addEventListener('click', () => { authMode = 'register'; renderAuthMode(); });
+element<HTMLButtonElement>('login-tab').addEventListener('click', () => {
+  authMode = 'login';
+  renderAuthMode();
+});
+element<HTMLButtonElement>('register-tab').addEventListener('click', () => {
+  authMode = 'register';
+  renderAuthMode();
+});
 element<HTMLFormElement>('auth-form').addEventListener('submit', (event) => {
   event.preventDefault();
   const button = element<HTMLButtonElement>('email-submit');
   const email = element<HTMLInputElement>('email').value.trim();
   const password = element<HTMLInputElement>('password').value;
-  if (!email || password.length < 12) { showStatus('יש להזין אימייל וסיסמה בת 12 תווים לפחות.', true); return; }
+  if (!email || password.length < 12) {
+    showStatus('יש להזין אימייל וסיסמה בת 12 תווים לפחות.', true);
+    return;
+  }
   setBusy(button, true, authMode === 'login' ? 'נכנס…' : 'יוצר חשבון…');
   void request({ type: 'AUTH_EMAIL', mode: authMode, email, password })
     .then(authenticated)
@@ -609,24 +721,38 @@ element<HTMLButtonElement>('google-button').addEventListener('click', () => {
     .finally(() => setBusy(button, false));
 });
 element<HTMLButtonElement>('logout-button').addEventListener('click', () => {
-  void request({ type: 'LOGOUT' }).finally(() => { session = null; resetCapture(); showView('auth'); });
+  void request({ type: 'LOGOUT' }).finally(() => {
+    session = null;
+    resetCapture();
+    showView('auth');
+  });
 });
 element<HTMLButtonElement>('read-selection').addEventListener('click', () => {
   const button = element<HTMLButtonElement>('read-selection');
   phase = nextPhase(phase, 'EXTRACT');
   setBusy(button, true, 'קורא…');
   void request({ type: 'GET_ACTIVE_CONTEXT', selectedText: sourceText.value })
-    .then((result) => {
+    .then(async (result) => {
       if (!result.selectedText) throw new Error('NO_SELECTION');
       setContext(result);
       phase = nextPhase(phase, 'EXTRACTED');
+      await loadPreview(button);
     })
-    .catch(() => { phase = nextPhase(phase, 'CONTEXT_ERROR'); showStatus('לא נמצא סימון בעמוד. אפשר להקליד ידנית.', true); })
+    .catch(() => {
+      phase = nextPhase(phase, 'CONTEXT_ERROR');
+      showStatus('לא נמצא סימון בעמוד. אפשר להקליד ידנית.', true);
+    })
     .finally(() => setBusy(button, false));
 });
-previewButton.addEventListener('click', () => void loadPreview());
-previewForm.addEventListener('submit', (event) => { event.preventDefault(); void save(); });
-element<HTMLButtonElement>('cancel-button').addEventListener('click', () => resetCapture());
+previewButton.addEventListener('click', () => {
+  setMethod('dictionary');
+  resetSaveIntent();
+  void loadPreview(previewButton);
+});
+previewForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  void save();
+});
 element<HTMLButtonElement>('save-another').addEventListener('click', () => resetCapture());
 element<HTMLButtonElement>('speak-button').addEventListener('click', () => {
   speechSynthesis.cancel();
@@ -660,17 +786,12 @@ aiTranslation.addEventListener('click', () => {
   resetSaveIntent();
   void loadPreview(aiTranslation);
 });
-editLexical.addEventListener('click', () => {
-  setLexicalEditing(!lexicalEditing);
-  resetSaveIntent();
-});
 partOfSpeech.addEventListener('input', () => {
   if (!itemTypeManuallyEdited) inferItemType(true);
   resetSaveIntent();
 });
 itemType.addEventListener('change', () => {
   itemTypeManuallyEdited = true;
-  updateDetectedDisplays();
   resetSaveIntent();
 });
 const newSenseInput = document.querySelector<HTMLInputElement>('input[name="sense"][value="new"]');

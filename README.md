@@ -9,7 +9,7 @@ Production-oriented Manifest V3 client for capturing a word or phrase together w
 - Rotating Core refresh session with access tokens kept in `chrome.storage.session`.
 - Right-click **Save to GotIt** capture using `activeTab` and temporary script injection.
 - Manual popup capture and active-page selection capture.
-- Optional instant double-click translation with separate quick-save and review actions, plus a floating action beside selected text, enabled only after an explicit optional host-permission grant.
+- Instant double-click translation with separate quick-save and review actions, plus a floating action beside selected text; enabled by default and independently switchable in settings.
 - Sentence, title, URL, language hint and timestamp extraction without sending page HTML.
 - Server preview using `auto`, `dictionary` or `ai`; no direct provider requests.
 - Source and translation shown prominently as read-only by default with explicit editing, inline item-type/part-of-speech details, a concise AI explanation, provider candidates and pronunciation playback.

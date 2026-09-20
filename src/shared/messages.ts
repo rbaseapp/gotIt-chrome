@@ -7,7 +7,6 @@ import type {
   ExtensionSettings,
   GotItProfile,
   InlinePreviewResult,
-  InlineLexicalDetails,
   PublicSession,
   ResponseEnvelope,
   TranslationMethod
@@ -22,15 +21,10 @@ export type ExtensionRequest =
   | { type: 'GET_CONTENT_CONFIG' }
   | { type: 'CONTENT_CAPTURE'; context: CaptureContext }
   | { type: 'INLINE_PREVIEW'; context: CaptureContext; translationMethod?: TranslationMethod }
-  | {
-      type: 'INLINE_DETAILS';
-      context: CaptureContext;
-      sourceLanguageCode?: string;
-      translationLanguageCode?: string;
-    }
-  | { type: 'INLINE_SAVE'; inlineCaptureId: string }
+  | { type: 'INLINE_SAVE'; inlineCaptureId: string; candidateIndex: number }
   | { type: 'PREVIEW_CAPTURE'; input: PreviewRequest }
   | { type: 'SAVE_CAPTURE'; input: CaptureSaveInput; eventId: string }
+  | { type: 'UPDATE_SAVED_ITEM'; learningItemId: string; patch: SavedItemPatch }
   | { type: 'PATCH_PROFILE'; patch: ProfilePatch }
   | { type: 'GET_SETTINGS' }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<ExtensionSettings> };
@@ -55,19 +49,28 @@ export interface ProfilePatch {
   translationMethodPreference?: TranslationMethod | null;
 }
 
+export interface SavedItemPatch {
+  sourceText: string;
+  sourceLanguageCode: string;
+  translationLanguageCode: string;
+  itemType: 'word' | 'phrase' | 'expression' | 'phrasal_verb' | 'other';
+  partOfSpeech: string | null;
+  translation: { text: string; variants: string[] };
+}
+
 export interface ResponseMap {
   GET_BOOTSTRAP: BootstrapData;
   AUTH_EMAIL: PublicSession;
   AUTH_GOOGLE: PublicSession;
   LOGOUT: null;
   GET_ACTIVE_CONTEXT: CaptureContext;
-  GET_CONTENT_CONFIG: { floatingAction: boolean };
+  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai' };
   CONTENT_CAPTURE: null;
   INLINE_PREVIEW: InlinePreviewResult;
-  INLINE_DETAILS: InlineLexicalDetails | null;
   INLINE_SAVE: CaptureResult;
   PREVIEW_CAPTURE: CapturePreview;
   SAVE_CAPTURE: CaptureResult;
+  UPDATE_SAVED_ITEM: null;
   PATCH_PROFILE: GotItProfile;
   GET_SETTINGS: ExtensionSettings;
   UPDATE_SETTINGS: ExtensionSettings;
@@ -155,6 +158,22 @@ function isProfilePatch(value: unknown): value is ProfilePatch {
   );
 }
 
+function isSavedItemPatch(value: unknown): value is SavedItemPatch {
+  if (!isRecord(value) || !isRecord(value.translation)) return false;
+  if (!hasOnlyKeys(value, ['sourceText', 'sourceLanguageCode', 'translationLanguageCode', 'itemType', 'partOfSpeech', 'translation'])) return false;
+  if (!hasOnlyKeys(value.translation, ['text', 'variants'])) return false;
+  return (
+    typeof value.sourceText === 'string' &&
+    typeof value.sourceLanguageCode === 'string' &&
+    typeof value.translationLanguageCode === 'string' &&
+    ['word', 'phrase', 'expression', 'phrasal_verb', 'other'].includes(String(value.itemType)) &&
+    nullableString(value.partOfSpeech) &&
+    typeof value.translation.text === 'string' &&
+    Array.isArray(value.translation.variants) &&
+    value.translation.variants.every((entry) => typeof entry === 'string')
+  );
+}
+
 function isSettingsPatch(value: unknown): value is Partial<ExtensionSettings> {
   if (!isRecord(value)) return false;
   if (!hasOnlyKeys(value, ['floatingAction', 'autoCloseAfterSave'])) return false;
@@ -198,27 +217,14 @@ export function parseRequest(value: unknown): ExtensionRequest | null {
       return value.translationMethod === undefined
         ? { type: value.type, context: value.context }
         : { type: value.type, context: value.context, translationMethod: value.translationMethod as TranslationMethod };
-    case 'INLINE_DETAILS':
-      if (
-        !hasOnlyKeys(value, ['type', 'context', 'sourceLanguageCode', 'translationLanguageCode']) ||
-        !isCaptureContext(value.context) ||
-        !optionalString(value.sourceLanguageCode) ||
-        !optionalString(value.translationLanguageCode)
-      ) return null;
-      {
-        const detailsRequest: Extract<ExtensionRequest, { type: 'INLINE_DETAILS' }> = {
-          type: value.type,
-          context: value.context
-        };
-        if (typeof value.sourceLanguageCode === 'string') detailsRequest.sourceLanguageCode = value.sourceLanguageCode;
-        if (typeof value.translationLanguageCode === 'string') detailsRequest.translationLanguageCode = value.translationLanguageCode;
-        return detailsRequest;
-      }
     case 'INLINE_SAVE':
-      return hasOnlyKeys(value, ['type', 'inlineCaptureId']) &&
+      return hasOnlyKeys(value, ['type', 'inlineCaptureId', 'candidateIndex']) &&
         typeof value.inlineCaptureId === 'string' &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.inlineCaptureId)
-        ? { type: value.type, inlineCaptureId: value.inlineCaptureId }
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.inlineCaptureId) &&
+        Number.isInteger(value.candidateIndex) &&
+        Number(value.candidateIndex) >= 0 &&
+        Number(value.candidateIndex) < 5
+        ? { type: value.type, inlineCaptureId: value.inlineCaptureId, candidateIndex: Number(value.candidateIndex) }
         : null;
     case 'PREVIEW_CAPTURE':
       return hasOnlyKeys(value, ['type', 'input']) && isPreviewRequest(value.input)
@@ -227,6 +233,13 @@ export function parseRequest(value: unknown): ExtensionRequest | null {
     case 'SAVE_CAPTURE':
       return hasOnlyKeys(value, ['type', 'input', 'eventId']) && isSaveInput(value.input) && typeof value.eventId === 'string'
         ? { type: value.type, input: value.input, eventId: value.eventId }
+        : null;
+    case 'UPDATE_SAVED_ITEM':
+      return hasOnlyKeys(value, ['type', 'learningItemId', 'patch']) &&
+        typeof value.learningItemId === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.learningItemId) &&
+        isSavedItemPatch(value.patch)
+        ? { type: value.type, learningItemId: value.learningItemId, patch: value.patch }
         : null;
     case 'PATCH_PROFILE':
       return hasOnlyKeys(value, ['type', 'patch']) && isProfilePatch(value.patch) ? { type: value.type, patch: value.patch } : null;

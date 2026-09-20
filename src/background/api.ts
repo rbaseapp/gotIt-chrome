@@ -5,7 +5,7 @@ import type {
   CaptureSaveInput,
   GotItProfile
 } from '../shared/types';
-import type { PreviewRequest, ProfilePatch } from '../shared/messages';
+import type { PreviewRequest, ProfilePatch, SavedItemPatch } from '../shared/messages';
 
 const RETRY_STATUSES = new Set([502, 503, 504]);
 
@@ -98,4 +98,11 @@ export async function saveCapture(input: CaptureSaveInput, eventId: string): Pro
     body: JSON.stringify(input)
   }, { retrySafe: true, idempotencyKey: eventId });
   return response.capture;
+}
+
+export async function updateSavedItem(learningItemId: string, patch: SavedItemPatch): Promise<void> {
+  await productRequest(`/library/${encodeURIComponent(learningItemId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch)
+  });
 }

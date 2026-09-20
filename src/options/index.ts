@@ -11,7 +11,6 @@ const profileForm = element<HTMLFormElement>('profile-form');
 const targetLanguage = element<HTMLInputElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
 const floating = element<HTMLInputElement>('floating-action');
-const autoClose = element<HTMLInputElement>('auto-close');
 const status = element<HTMLElement>('status');
 let statusTimer: number | null = null;
 
@@ -47,7 +46,6 @@ async function initialize(): Promise<void> {
   try {
     const data = await request({ type: 'GET_BOOTSTRAP' });
     floating.checked = data.settings.floatingAction;
-    autoClose.checked = data.settings.autoCloseAfterSave;
     if (!data.session) {
       element<HTMLElement>('signed-out-notice').hidden = false;
       profileForm.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input,select,button').forEach((control) => { control.disabled = true; });
@@ -83,23 +81,10 @@ floating.addEventListener('change', () => {
   const desired = floating.checked;
   floating.disabled = true;
   void (async () => {
-    if (desired) {
-      const granted = await chrome.permissions.request({ origins: ['http://*/*', 'https://*/*'] });
-      if (!granted) { floating.checked = false; notify('ללא הרשאת אתרים הכפתור הצף יישאר כבוי.', true); return; }
-    }
     await request({ type: 'UPDATE_SETTINGS', settings: { floatingAction: desired } });
-    if (!desired) await chrome.permissions.remove({ origins: ['http://*/*', 'https://*/*'] });
-    notify(desired ? 'הכפתור הצף הופעל.' : 'הכפתור הצף כובה והרשאת האתרים הוסרה.');
+    notify(desired ? 'הכפתור הצף והתרגום בלחיצה כפולה הופעלו.' : 'הכפתור הצף והתרגום בלחיצה כפולה כובו.');
   })().catch((error: unknown) => { floating.checked = !desired; notify(message(error), true); })
     .finally(() => { floating.disabled = false; });
-});
-
-autoClose.addEventListener('change', () => {
-  autoClose.disabled = true;
-  void request({ type: 'UPDATE_SETTINGS', settings: { autoCloseAfterSave: autoClose.checked } })
-    .then(() => notify('ההגדרה נשמרה.'))
-    .catch((error: unknown) => { autoClose.checked = !autoClose.checked; notify(message(error), true); })
-    .finally(() => { autoClose.disabled = false; });
 });
 
 void initialize();

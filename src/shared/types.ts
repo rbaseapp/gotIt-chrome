@@ -167,9 +167,3 @@ export interface InlinePreviewResult {
   inlineCaptureId: string;
   preview: CapturePreview;
 }
-
-export interface InlineLexicalDetails {
-  partOfSpeech: string | null;
-  explanation: string | null;
-  variants: string[];
-}

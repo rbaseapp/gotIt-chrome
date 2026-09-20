@@ -6,10 +6,9 @@ import type {
   CapturePreview,
   CaptureSaveInput,
   ClientError,
-  InlineLexicalDetails,
   ResponseEnvelope
 } from '../shared/types';
-import { getProfile, patchProfile, previewCapture, saveCapture } from './api';
+import { getProfile, patchProfile, previewCapture, saveCapture, updateSavedItem } from './api';
 import {
   getPublicSession,
   RequestError,
@@ -18,6 +17,7 @@ import {
   signOut
 } from './auth';
 import { getSettings, syncFloatingContentScript, updateSettings } from './settings';
+import { effectiveTranslationMethod } from '../shared/translation';
 
 const PENDING_KEY = 'gotit.pending-capture.v1';
 const INLINE_PREFIX = 'gotit.inline-capture.v1.';
@@ -106,10 +106,10 @@ function quickSenseDecision(preview: CapturePreview, translation: string): Captu
   throw new RequestError('REVIEW_REQUIRED', 'Choose an existing meaning or create a new sense', 409);
 }
 
-async function quickSave(id: string) {
+async function quickSave(id: string, candidateIndex: number) {
   const record = await loadInline(id);
   const { preview, context } = record;
-  const candidate = preview.enrichment.candidates[0];
+  const candidate = preview.enrichment.candidates[candidateIndex];
   if (!candidate || !preview.sourceLanguageCode || !preview.translationLanguageCode) {
     throw new RequestError('REVIEW_REQUIRED', 'Translation or language selection requires review', 409);
   }
@@ -203,39 +203,18 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     }
     return { preview, inlineCaptureId: await storeInline(captured, preview) };
   }
-  if (request.type === 'INLINE_DETAILS') {
-    if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
-    const captured = request.context;
-    const input: Parameters<typeof previewCapture>[0] = {
-      selectedText: captured.selectedText,
-      sourceText: captured.selectedText,
-      translationMethod: 'ai',
-      context: {
-        sentenceText: captured.sentenceText,
-        paragraphText: null,
-        pageTitle: captured.pageTitle,
-        pageUrl: captured.pageUrl
-      }
-    };
-    if (request.sourceLanguageCode) input.sourceLanguageCode = request.sourceLanguageCode;
-    else if (captured.documentLanguageHint) input.documentLanguageHint = captured.documentLanguageHint;
-    const targetLanguage = request.translationLanguageCode ?? uiLanguage();
-    if (targetLanguage) input.translationLanguageCode = targetLanguage;
-    const candidate = (await previewCapture(input)).enrichment.candidates[0];
-    if (!candidate) return null;
-    return {
-      partOfSpeech: candidate.partOfSpeech,
-      explanation: candidate.explanation?.trim() || null,
-      variants: candidate.variants
-    } satisfies InlineLexicalDetails;
-  }
   if (request.type === 'INLINE_SAVE') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
-    return quickSave(request.inlineCaptureId);
+    return quickSave(request.inlineCaptureId, request.candidateIndex);
   }
   if (request.type === 'GET_CONTENT_CONFIG') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
-    return { floatingAction: (await getSettings()).floatingAction };
+    const [settings, session] = await Promise.all([getSettings(), getPublicSession()]);
+    const profile = session ? await getProfile().catch(() => null) : null;
+    return {
+      floatingAction: settings.floatingAction,
+      translationMethod: effectiveTranslationMethod(profile?.translationMethodPreference)
+    };
   }
   if (!extensionPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
   switch (request.type) {
@@ -246,6 +225,7 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     case 'GET_ACTIVE_CONTEXT': return extractContext(await activeTab(), request.selectedText ?? '');
     case 'PREVIEW_CAPTURE': return previewCapture(request.input);
     case 'SAVE_CAPTURE': return saveCapture(request.input, request.eventId);
+    case 'UPDATE_SAVED_ITEM': await updateSavedItem(request.learningItemId, request.patch); return null;
     case 'PATCH_PROFILE': return patchProfile(request.patch);
     case 'GET_SETTINGS': return getSettings();
     case 'UPDATE_SETTINGS': return updateSettings(request.settings);

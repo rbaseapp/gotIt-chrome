@@ -73,8 +73,11 @@ const manifest = {
   options_page: 'options.html',
   background: { service_worker: 'background.js', type: 'module' },
   permissions: ['storage', 'contextMenus', 'activeTab', 'scripting', 'identity'],
-  optional_host_permissions: ['http://*/*', 'https://*/*'],
-  host_permissions: [...new Set([originPattern(coreApiBase), originPattern(gotitApiBase)])],
+  host_permissions: [
+    'http://*/*',
+    'https://*/*',
+    ...new Set([originPattern(coreApiBase), originPattern(gotitApiBase)])
+  ],
   oauth2: {
     client_id: googleClientId,
     scopes: ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']

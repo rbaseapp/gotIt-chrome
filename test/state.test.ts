@@ -18,4 +18,5 @@ test('safe retry remains in the save lifecycle and reset returns to idle', () =>
   assert.equal(nextPhase('SAVE_FAILED', 'SAVE'), 'SAVING');
   assert.equal(nextPhase('OFFLINE', 'SAVE'), 'SAVING');
   assert.equal(nextPhase('SAVED', 'RESET'), 'IDLE');
+  assert.equal(nextPhase('SAVED', 'SAVE'), 'SAVING');
 });

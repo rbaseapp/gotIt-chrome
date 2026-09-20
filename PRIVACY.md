@@ -10,6 +10,6 @@ Account information and authentication are handled by rbase Core. The extension 
 
 GotIt does not sell captured content or use it for general advertising. Product telemetry, if enabled in the future, must not include selected text, sentence text, full URLs or translations without a separate explicit policy and user disclosure.
 
-Users can stop collection by not invoking a capture, disable the optional floating action and revoke its site permission, sign out to remove local session data, or use GotIt account/library controls to delete stored items.
+Users can stop collection by not invoking a capture, disable the floating action and double-click translation in settings, sign out to remove local session data, or use GotIt account/library controls to delete stored items.
 
 Contact details and the public policy URL must be added by the publisher before submission to the Chrome Web Store.

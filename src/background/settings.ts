@@ -2,15 +2,25 @@ import type { ExtensionSettings } from '../shared/types';
 
 const SETTINGS_KEY = 'gotit.settings.v1';
 const CONTENT_SCRIPT_ID = 'gotit-floating-action';
-const defaults: ExtensionSettings = { floatingAction: false, autoCloseAfterSave: false };
+export const defaultSettings: ExtensionSettings = { floatingAction: true, autoCloseAfterSave: false };
+
+export function resolveSettings(value: unknown): ExtensionSettings {
+  const stored = typeof value === 'object' && value !== null
+    ? value as Partial<ExtensionSettings>
+    : undefined;
+  return {
+    floatingAction: typeof stored?.floatingAction === 'boolean'
+      ? stored.floatingAction
+      : defaultSettings.floatingAction,
+    autoCloseAfterSave: typeof stored?.autoCloseAfterSave === 'boolean'
+      ? stored.autoCloseAfterSave
+      : defaultSettings.autoCloseAfterSave
+  };
+}
 
 export async function getSettings(): Promise<ExtensionSettings> {
   const stored = await chrome.storage.local.get(SETTINGS_KEY);
-  const value = stored[SETTINGS_KEY] as Partial<ExtensionSettings> | undefined;
-  return {
-    floatingAction: value?.floatingAction === true,
-    autoCloseAfterSave: value?.autoCloseAfterSave === true
-  };
+  return resolveSettings(stored[SETTINGS_KEY]);
 }
 
 export async function updateSettings(patch: Partial<ExtensionSettings>): Promise<ExtensionSettings> {

@@ -24,13 +24,50 @@ test('validates capture context shape crossing the content-script boundary', () 
   );
   assert.equal(parseRequest({ type: 'INLINE_PREVIEW', context, translationMethod: 'unsafe' }), null);
   assert.deepEqual(
-    parseRequest({ type: 'INLINE_DETAILS', context, sourceLanguageCode: 'en', translationLanguageCode: 'he' }),
-    { type: 'INLINE_DETAILS', context, sourceLanguageCode: 'en', translationLanguageCode: 'he' }
+    parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000', candidateIndex: 2 }),
+    { type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000', candidateIndex: 2 }
   );
-  assert.equal(parseRequest({ type: 'INLINE_DETAILS', context, sourceLanguageCode: 3 }), null);
-  assert.deepEqual(
-    parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000' }),
-    { type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000' }
-  );
-  assert.equal(parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: 'not-a-uuid' }), null);
+  assert.equal(parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: 'not-a-uuid', candidateIndex: 0 }), null);
+  assert.equal(parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000', candidateIndex: 5 }), null);
+});
+
+test('keeps an explicit Google method on inline translation requests', () => {
+  const context = {
+    selectedText: 'hello',
+    sentenceText: 'hello world',
+    paragraphText: null,
+    pageTitle: 'Example',
+    pageUrl: 'https://example.com/',
+    documentLanguageHint: 'en',
+    capturedAt: '2026-09-18T10:00:00.000Z'
+  };
+
+  assert.deepEqual(parseRequest({
+    type: 'INLINE_PREVIEW',
+    context,
+    translationMethod: 'dictionary'
+  }), {
+    type: 'INLINE_PREVIEW',
+    context,
+    translationMethod: 'dictionary'
+  });
+});
+
+test('accepts only a strictly shaped saved-item update', () => {
+  const request = {
+    type: 'UPDATE_SAVED_ITEM',
+    learningItemId: '123e4567-e89b-42d3-a456-426614174000',
+    patch: {
+      sourceText: 'hello',
+      sourceLanguageCode: 'en',
+      translationLanguageCode: 'he',
+      itemType: 'word',
+      partOfSpeech: 'noun',
+      translation: { text: 'שלום', variants: [] }
+    }
+  } as const;
+
+  assert.deepEqual(parseRequest(request), request);
+  assert.equal(parseRequest({ ...request, learningItemId: 'not-a-uuid' }), null);
+  assert.equal(parseRequest({ ...request, patch: { ...request.patch, injected: true } }), null);
 });

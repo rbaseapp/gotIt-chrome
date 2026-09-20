@@ -10,7 +10,10 @@ const manifest = JSON.parse(await readFile(path.join(dist, 'manifest.json'), 'ut
 assert.equal(manifest.manifest_version, 3);
 assert.deepEqual(manifest.permissions.sort(), ['activeTab', 'contextMenus', 'identity', 'scripting', 'storage'].sort());
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
-assert.ok(manifest.host_permissions.every((entry) => /^https?:\/\/[^*]+\/\*$/u.test(entry)));
+assert.equal(manifest.optional_host_permissions, undefined);
+assert.ok(manifest.host_permissions.includes('http://*/*'));
+assert.ok(manifest.host_permissions.includes('https://*/*'));
+assert.ok(manifest.host_permissions.every((entry) => /^https?:\/\/(?:\*|[^*]+)\/\*$/u.test(entry)));
 assert.equal(manifest.content_scripts, undefined);
 assert.equal(manifest.externally_connectable, undefined);
 assert.equal(manifest.content_security_policy.extension_pages, "script-src 'self'; object-src 'self'");
