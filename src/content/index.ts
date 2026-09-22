@@ -1,4 +1,5 @@
 import { selectionContext } from '../shared/context';
+import { findMatchingSavedSense } from '../shared/saved-match';
 import { INLINE_TRANSLATION_TIMEOUT_MS } from '../shared/translation';
 import type {
   CaptureContext,
@@ -165,10 +166,13 @@ if (!state.__gotitContentLoaded) {
       .round-action { width:42px; height:42px; border:1px solid #49536e; border-radius:12px; background:#293149; color:#dce1ed; box-shadow:0 8px 20px rgba(3,6,15,.16); transition:background .16s ease, border-color .16s ease, transform .16s ease; }
       .round-action.labeled-action { display:flex; width:auto; min-width:69px; padding:0 10px; gap:6px; font-size:12px; font-weight:800; white-space:nowrap; }
       .round-action:hover { border-color:#64708f; background:#343e59; transform:translateY(-1px); }
-      .round-action:disabled { opacity:.45; cursor:wait; transform:none; }
+      .round-action:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+      .round-action.saving:disabled { cursor:wait; }
       .round-action svg { width:20px; height:20px; }
       .primary-action { border-color:#6879f3; background:linear-gradient(135deg, #7485ff, #6273ef); color:#fff; }
       .primary-action:hover { border-color:#8795ff; background:linear-gradient(135deg, #8291ff, #6d7df7); }
+      .remove-action { border-color:#8b4a55; background:#482831; color:#ffd0d5; }
+      .remove-action:hover { border-color:#b96572; background:#5a303a; }
       .save-action.saving svg { display:none; }
       .save-action.saving::after { content:""; width:17px; height:17px; border:2px solid rgba(255,255,255,.38); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
       .speak { color:var(--warm); }
@@ -386,7 +390,7 @@ if (!state.__gotitContentLoaded) {
       speak.addEventListener('click', () => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(context.selectedText.trim());
-        utterance.lang = preview.sourceLanguageCode ?? context.documentLanguageHint ?? '';
+        utterance.lang = preview.sourceLanguageCode ?? '';
         utterance.addEventListener('start', () => speak.classList.add('speaking'));
         utterance.addEventListener('end', () => speak.classList.remove('speaking'));
         utterance.addEventListener('error', () => speak.classList.remove('speaking'));
@@ -491,11 +495,57 @@ if (!state.__gotitContentLoaded) {
       const providerLabel = preview.translationMethod === 'ai' ? 'AI' : 'Google Translate';
       meta.textContent = `${providerLabel} · ${(preview.sourceLanguageCode ?? '?').toUpperCase()} → ${(preview.translationLanguageCode ?? '?').toUpperCase()}`;
 
+      const matchingSavedSense = findMatchingSavedSense(preview.existingSenses.items, selectedCandidate.text);
+      let savedLearningItemId: string | null = matchingSavedSense?.learningItemId ?? null;
+      if (matchingSavedSense) {
+        quickSave.classList.remove('primary-action');
+        quickSave.classList.add('remove-action');
+        quickSave.setAttribute('aria-label', 'הסר מהשמורים');
+        quickSave.setAttribute('title', 'הסר מהשמורים');
+        const saveLabel = quickSave.querySelector('span');
+        if (saveLabel) saveLabel.textContent = 'הסר';
+      }
       quickSave.addEventListener('click', () => {
         quickSave.disabled = true;
         quickSave.classList.add('saving');
-        quickSave.setAttribute('aria-label', 'שומר ב־GotIt…');
-        quickSave.setAttribute('title', 'שומר ב־GotIt…');
+        const removing = savedLearningItemId !== null;
+        quickSave.setAttribute('aria-label', removing ? 'מסיר מהשמורים…' : 'שומר ב־GotIt…');
+        quickSave.setAttribute('title', removing ? 'מסיר מהשמורים…' : 'שומר ב־GotIt…');
+        if (removing) {
+          void chrome.runtime
+            .sendMessage({ type: 'REMOVE_SAVED_ITEM', learningItemId: savedLearningItemId })
+            .then((removed: ResponseEnvelope<null>) => {
+              if (host !== currentHost) return;
+              if (!removed.ok) {
+                const warning = document.createElement('div');
+                warning.className = 'provider-warning';
+                warning.textContent = statusMessage(removed.error);
+                body.prepend(warning);
+                quickSave.disabled = false;
+                quickSave.classList.remove('saving');
+                quickSave.setAttribute('aria-label', 'ניסיון הסרה נוסף');
+                quickSave.setAttribute('title', 'ניסיון הסרה נוסף');
+                fitPanel();
+                return;
+              }
+              body.querySelector('.saved')?.remove();
+              const confirmation = document.createElement('div');
+              confirmation.className = 'saved';
+              confirmation.textContent = 'המילה הוסרה מהשמורים';
+              body.prepend(confirmation);
+              savedLearningItemId = null;
+              quickSave.classList.remove('saving');
+              fitPanel();
+              loadInlinePreview(preview.translationMethod === 'ai' ? 'ai' : 'dictionary');
+            })
+            .catch(() => {
+              quickSave.disabled = false;
+              quickSave.classList.remove('saving');
+              quickSave.setAttribute('aria-label', 'ניסיון הסרה נוסף');
+              quickSave.setAttribute('title', 'ניסיון הסרה נוסף');
+            });
+          return;
+        }
         void chrome.runtime
           .sendMessage({ type: 'INLINE_SAVE', inlineCaptureId, candidateIndex })
           .then((saved: ResponseEnvelope<CaptureResult>) => {
@@ -521,12 +571,15 @@ if (!state.__gotitContentLoaded) {
             confirmation.className = 'saved';
             confirmation.textContent = saved.data.outcome === 'merged' ? 'ההקשר נוסף למילה ✓' : 'המילה נשמרה ב־GotIt ✓';
             body.prepend(confirmation);
+            savedLearningItemId = saved.data.learningItemId;
             quickSave.classList.remove('saving');
-            quickSave.disabled = true;
-            quickSave.setAttribute('aria-label', 'נשמר ב־GotIt');
-            quickSave.setAttribute('title', 'נשמר ב־GotIt');
+            quickSave.classList.remove('primary-action');
+            quickSave.classList.add('remove-action');
+            quickSave.disabled = false;
+            quickSave.setAttribute('aria-label', 'הסר מהשמורים');
+            quickSave.setAttribute('title', 'הסר מהשמורים');
             const saveLabel = quickSave.querySelector('span');
-            if (saveLabel) saveLabel.textContent = 'נשמר';
+            if (saveLabel) saveLabel.textContent = 'הסר';
             fitPanel();
           })
           .catch(() => {
@@ -537,6 +590,12 @@ if (!state.__gotitContentLoaded) {
           });
       });
       body.replaceChildren(translationRow);
+      if (matchingSavedSense) {
+        const alreadySaved = document.createElement('div');
+        alreadySaved.className = 'saved';
+        alreadySaved.textContent = 'המילה כבר שמורה ב־GotIt ✓';
+        body.prepend(alreadySaved);
+      }
       if (preview.enrichment.candidates.length > 1) body.append(meaningList);
       body.append(explanation, meta);
       fitPanel();

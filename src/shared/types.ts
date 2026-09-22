@@ -53,7 +53,7 @@ export interface ExistingSense {
 export interface CapturePreview {
   sourceText: string;
   sourceLanguageCode: string | null;
-  sourceLanguageResolution: 'user' | 'document_hint' | 'provider' | 'unresolved';
+  sourceLanguageResolution: 'user' | 'profile' | 'document_hint' | 'provider' | 'unresolved';
   translationLanguageCode: string | null;
   translationLanguageResolution: 'user' | 'profile' | 'unresolved';
   translationMethod: TranslationMethod;
@@ -77,6 +77,8 @@ export interface ProfileLanguage {
 }
 
 export interface GotItProfile {
+  /** Null delegates source-language detection to the translation provider. */
+  defaultSourceLanguage: string | null;
   defaultTranslationLanguage: string | null;
   timezone: string;
   dailyGoal: { type: 'items' | 'minutes' | 'attempts'; value: number };

@@ -1,5 +1,6 @@
 import { sendRequest, type ExtensionRequest, type ResponseMap } from '../shared/messages';
 import type { ClientError, TranslationMethod } from '../shared/types';
+import { populateLanguageSelect } from '../shared/languages';
 
 function element<T extends HTMLElement>(id: string): T {
   const result = document.getElementById(id);
@@ -8,7 +9,8 @@ function element<T extends HTMLElement>(id: string): T {
 }
 
 const profileForm = element<HTMLFormElement>('profile-form');
-const targetLanguage = element<HTMLInputElement>('target-language');
+const sourceLanguage = element<HTMLSelectElement>('source-language');
+const targetLanguage = element<HTMLSelectElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
 const floating = element<HTMLInputElement>('floating-action');
 const status = element<HTMLElement>('status');
@@ -51,6 +53,7 @@ async function initialize(): Promise<void> {
       profileForm.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input,select,button').forEach((control) => { control.disabled = true; });
       return;
     }
+    sourceLanguage.value = data.profile?.defaultSourceLanguage ?? '';
     targetLanguage.value = data.profile?.defaultTranslationLanguage
       ?? validLanguage(chrome.i18n.getUILanguage())?.split('-')[0]
       ?? 'en';
@@ -62,6 +65,7 @@ async function initialize(): Promise<void> {
 
 profileForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  const source = sourceLanguage.value ? validLanguage(sourceLanguage.value) : null;
   const language = validLanguage(targetLanguage.value);
   if (!language) { notify('יש להזין קוד שפה תקין, למשל he או en.', true); return; }
   const button = element<HTMLButtonElement>('save-profile');
@@ -69,6 +73,7 @@ profileForm.addEventListener('submit', (event) => {
   void request({
     type: 'PATCH_PROFILE',
     patch: {
+      defaultSourceLanguage: source,
       defaultTranslationLanguage: language,
       translationMethodPreference: method.value as TranslationMethod
     }
@@ -76,6 +81,9 @@ profileForm.addEventListener('submit', (event) => {
     .catch((error: unknown) => notify(message(error), true))
     .finally(() => { button.disabled = false; });
 });
+
+populateLanguageSelect(sourceLanguage, true);
+populateLanguageSelect(targetLanguage);
 
 floating.addEventListener('change', () => {
   const desired = floating.checked;

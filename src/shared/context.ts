@@ -48,7 +48,6 @@ export function selectionContext(documentRef: Document = document): CaptureConte
   }
   if (start < 0) start = 0;
   const sentenceText = sentenceAround(raw, start, start + selection.toString().length, 4000);
-  const language = documentRef.documentElement.lang.trim();
   const context: CaptureContext = {
     selectedText,
     sentenceText: sentenceText || null,
@@ -57,7 +56,6 @@ export function selectionContext(documentRef: Document = document): CaptureConte
     pageUrl: /^https?:$/u.test(documentRef.location.protocol) ? documentRef.location.href : null,
     capturedAt: new Date().toISOString()
   };
-  if (language) context.documentLanguageHint = language;
   return context;
 }
 

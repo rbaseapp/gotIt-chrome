@@ -38,7 +38,6 @@ test('keeps an explicit Google method on inline translation requests', () => {
     paragraphText: null,
     pageTitle: 'Example',
     pageUrl: 'https://example.com/',
-    documentLanguageHint: 'en',
     capturedAt: '2026-09-18T10:00:00.000Z'
   };
 
@@ -51,6 +50,23 @@ test('keeps an explicit Google method on inline translation requests', () => {
     context,
     translationMethod: 'dictionary'
   });
+});
+
+test('accepts an automatic or explicit source-language profile preference', () => {
+  assert.deepEqual(
+    parseRequest({
+      type: 'PATCH_PROFILE',
+      patch: { defaultSourceLanguage: null, defaultTranslationLanguage: 'he' }
+    }),
+    {
+      type: 'PATCH_PROFILE',
+      patch: { defaultSourceLanguage: null, defaultTranslationLanguage: 'he' }
+    }
+  );
+  assert.deepEqual(
+    parseRequest({ type: 'PATCH_PROFILE', patch: { defaultSourceLanguage: 'en' } }),
+    { type: 'PATCH_PROFILE', patch: { defaultSourceLanguage: 'en' } }
+  );
 });
 
 test('accepts only a strictly shaped saved-item update', () => {
@@ -70,4 +86,15 @@ test('accepts only a strictly shaped saved-item update', () => {
   assert.deepEqual(parseRequest(request), request);
   assert.equal(parseRequest({ ...request, learningItemId: 'not-a-uuid' }), null);
   assert.equal(parseRequest({ ...request, patch: { ...request.patch, injected: true } }), null);
+});
+
+test('accepts only a strictly shaped saved-item removal', () => {
+  const request = {
+    type: 'REMOVE_SAVED_ITEM',
+    learningItemId: '123e4567-e89b-42d3-a456-426614174000'
+  } as const;
+
+  assert.deepEqual(parseRequest(request), request);
+  assert.equal(parseRequest({ ...request, learningItemId: 'not-a-uuid' }), null);
+  assert.equal(parseRequest({ ...request, injected: true }), null);
 });

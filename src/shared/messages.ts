@@ -25,6 +25,7 @@ export type ExtensionRequest =
   | { type: 'PREVIEW_CAPTURE'; input: PreviewRequest }
   | { type: 'SAVE_CAPTURE'; input: CaptureSaveInput; eventId: string }
   | { type: 'UPDATE_SAVED_ITEM'; learningItemId: string; patch: SavedItemPatch }
+  | { type: 'REMOVE_SAVED_ITEM'; learningItemId: string }
   | { type: 'PATCH_PROFILE'; patch: ProfilePatch }
   | { type: 'GET_SETTINGS' }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<ExtensionSettings> };
@@ -45,6 +46,7 @@ export interface PreviewRequest {
 }
 
 export interface ProfilePatch {
+  defaultSourceLanguage?: string | null;
   defaultTranslationLanguage?: string | null;
   translationMethodPreference?: TranslationMethod | null;
 }
@@ -71,6 +73,7 @@ export interface ResponseMap {
   PREVIEW_CAPTURE: CapturePreview;
   SAVE_CAPTURE: CaptureResult;
   UPDATE_SAVED_ITEM: null;
+  REMOVE_SAVED_ITEM: null;
   PATCH_PROFILE: GotItProfile;
   GET_SETTINGS: ExtensionSettings;
   UPDATE_SETTINGS: ExtensionSettings;
@@ -151,8 +154,9 @@ function isSaveInput(value: unknown): value is CaptureSaveInput {
 
 function isProfilePatch(value: unknown): value is ProfilePatch {
   if (!isRecord(value)) return false;
-  if (!hasOnlyKeys(value, ['defaultTranslationLanguage', 'translationMethodPreference'])) return false;
+  if (!hasOnlyKeys(value, ['defaultSourceLanguage', 'defaultTranslationLanguage', 'translationMethodPreference'])) return false;
   return (
+    (value.defaultSourceLanguage === undefined || nullableString(value.defaultSourceLanguage)) &&
     (value.defaultTranslationLanguage === undefined || nullableString(value.defaultTranslationLanguage)) &&
     (value.translationMethodPreference === undefined || value.translationMethodPreference === null || ['auto', 'dictionary', 'ai'].includes(String(value.translationMethodPreference)))
   );
@@ -240,6 +244,12 @@ export function parseRequest(value: unknown): ExtensionRequest | null {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.learningItemId) &&
         isSavedItemPatch(value.patch)
         ? { type: value.type, learningItemId: value.learningItemId, patch: value.patch }
+        : null;
+    case 'REMOVE_SAVED_ITEM':
+      return hasOnlyKeys(value, ['type', 'learningItemId']) &&
+        typeof value.learningItemId === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(value.learningItemId)
+        ? { type: value.type, learningItemId: value.learningItemId }
         : null;
     case 'PATCH_PROFILE':
       return hasOnlyKeys(value, ['type', 'patch']) && isProfilePatch(value.patch) ? { type: value.type, patch: value.patch } : null;

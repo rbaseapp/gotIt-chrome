@@ -101,8 +101,14 @@ export async function saveCapture(input: CaptureSaveInput, eventId: string): Pro
 }
 
 export async function updateSavedItem(learningItemId: string, patch: SavedItemPatch): Promise<void> {
-  await productRequest(`/library/${encodeURIComponent(learningItemId)}`, {
+  await productRequest(`/learning-items/${encodeURIComponent(learningItemId)}`, {
     method: 'PATCH',
     body: JSON.stringify(patch)
+  });
+}
+
+export async function removeSavedItem(learningItemId: string): Promise<void> {
+  await productRequest(`/learning-items/${encodeURIComponent(learningItemId)}`, {
+    method: 'DELETE'
   });
 }

@@ -22,7 +22,7 @@ Production-oriented Manifest V3 client for capturing a word or phrase together w
 
 Only the service worker performs Core/GotIt requests. `chrome.storage.local` and `chrome.storage.session` are restricted to `TRUSTED_CONTEXTS`, so injected/content code cannot read sessions. The content script receives only a boolean feature flag and sends bounded capture context. There is no remote code, `eval`, broad persistent content script or provider endpoint/key in the package.
 
-`X-Application-Key: gotit`, API base URLs and the Google OAuth client ID are public routing identifiers—not secrets. Anthropic/Google provider keys and the enrichment signing key belong only in the GotIt backend environment.
+`X-Application-Key: gotit`, API base URLs and the Google OAuth client ID are public routing identifiers—not secrets. OpenAI/Anthropic/Google provider keys and the enrichment signing key belong only in the GotIt backend environment.
 
 ## Build and verify
 
@@ -70,4 +70,4 @@ GOOGLE_TRANSLATE_API_KEY=<server-side Google Cloud Translation API key>
 ENRICHMENT_SIGNING_SECRET=<existing random secret of at least 32 bytes>
 ```
 
-For the explicit AI method, configure `ANTHROPIC_API_KEY`, `AI_TRANSLATION_MODEL` and the same signing secret. Never place either provider key in this repository, the extension build or Chrome storage.
+For the explicit AI method, configure `OPENAI_API_KEY`, `OPENAI_TRANSLATION_MODEL` and the same signing secret. Anthropic remains server-side only for story generation. Never place any provider key in this repository, the extension build or Chrome storage.

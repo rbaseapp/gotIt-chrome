@@ -8,7 +8,7 @@ import type {
   ClientError,
   ResponseEnvelope
 } from '../shared/types';
-import { getProfile, patchProfile, previewCapture, saveCapture, updateSavedItem } from './api';
+import { getProfile, patchProfile, previewCapture, removeSavedItem, saveCapture, updateSavedItem } from './api';
 import {
   getPublicSession,
   RequestError,
@@ -194,7 +194,6 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
       }
     };
     if (request.translationMethod) input.translationMethod = request.translationMethod;
-    if (captured.documentLanguageHint) input.documentLanguageHint = captured.documentLanguageHint;
     let preview = await previewCapture(input);
     const targetLanguage = uiLanguage();
     if (preview.requiresLanguageSelection && !preview.translationLanguageCode && targetLanguage) {
@@ -206,6 +205,10 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
   if (request.type === 'INLINE_SAVE') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
     return quickSave(request.inlineCaptureId, request.candidateIndex);
+  }
+  if (request.type === 'REMOVE_SAVED_ITEM' && contentPage) {
+    await removeSavedItem(request.learningItemId);
+    return null;
   }
   if (request.type === 'GET_CONTENT_CONFIG') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
@@ -226,6 +229,7 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     case 'PREVIEW_CAPTURE': return previewCapture(request.input);
     case 'SAVE_CAPTURE': return saveCapture(request.input, request.eventId);
     case 'UPDATE_SAVED_ITEM': await updateSavedItem(request.learningItemId, request.patch); return null;
+    case 'REMOVE_SAVED_ITEM': await removeSavedItem(request.learningItemId); return null;
     case 'PATCH_PROFILE': return patchProfile(request.patch);
     case 'GET_SETTINGS': return getSettings();
     case 'UPDATE_SETTINGS': return updateSettings(request.settings);

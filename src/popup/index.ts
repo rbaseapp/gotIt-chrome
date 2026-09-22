@@ -2,6 +2,7 @@ import { sendRequest, type ExtensionRequest, type ResponseMap } from '../shared/
 import { inferItemType as inferDetectedItemType } from '../shared/item-type';
 import { nextPhase } from '../shared/state';
 import { effectiveTranslationMethod } from '../shared/translation';
+import { populateLanguageSelect } from '../shared/languages';
 import type {
   BootstrapData,
   CaptureContext,
@@ -34,8 +35,8 @@ const editSource = element<HTMLButtonElement>('edit-source');
 const sentenceText = element<HTMLTextAreaElement>('sentence-text');
 const contextCard = element<HTMLElement>('context-card');
 const pageMeta = element<HTMLElement>('page-meta');
-const sourceLanguage = element<HTMLInputElement>('source-language');
-const targetLanguage = element<HTMLInputElement>('target-language');
+const sourceLanguage = element<HTMLSelectElement>('source-language');
+const targetLanguage = element<HTMLSelectElement>('target-language');
 const translationText = element<HTMLTextAreaElement>('translation-text');
 const translationCard = element<HTMLElement>('translation-card');
 const translationDisplay = element<HTMLElement>('translation-display');
@@ -55,6 +56,7 @@ const senseFieldset = element<HTMLFieldSetElement>('sense-fieldset');
 const sensesElement = element<HTMLElement>('senses');
 const previewWarning = element<HTMLElement>('preview-warning');
 const saveButton = element<HTMLButtonElement>('save-button');
+const removeSavedButton = element<HTMLButtonElement>('remove-saved');
 const previewButton = element<HTMLButtonElement>('preview-button');
 
 let phase: CapturePhase = 'IDLE';
@@ -173,6 +175,10 @@ function profileTargetLanguage(): string {
   return profile?.defaultTranslationLanguage ?? canonicalLanguage(chrome.i18n.getUILanguage())?.split('-')[0] ?? 'en';
 }
 
+function profileSourceLanguage(): string {
+  return profile?.defaultSourceLanguage ?? '';
+}
+
 function currentMethod(): TranslationMethod {
   const checked = document.querySelector<HTMLInputElement>('input[name="method"]:checked');
   return checked?.value === 'dictionary' || checked?.value === 'ai' ? checked.value : 'auto';
@@ -216,9 +222,6 @@ function setContext(next: CaptureContext): void {
   const meta = [next.pageTitle, next.pageUrl ? new URL(next.pageUrl).hostname : null].filter(Boolean).join(' · ');
   pageMeta.textContent = meta;
   contextCard.hidden = !(next.sentenceText || meta);
-  if (next.documentLanguageHint && !sourceLanguage.value) {
-    sourceLanguage.value = canonicalLanguage(next.documentLanguageHint) ?? '';
-  }
   inferItemType();
   resetSaveIntent();
 }
@@ -460,9 +463,6 @@ async function loadPreview(triggerButton = previewButton): Promise<void> {
       }
     };
     if (sourceCode) input.sourceLanguageCode = sourceCode;
-    else if (currentContext.documentLanguageHint && canonicalLanguage(currentContext.documentLanguageHint)) {
-      input.documentLanguageHint = canonicalLanguage(currentContext.documentLanguageHint)!;
-    }
     if (targetCode) input.translationLanguageCode = targetCode;
     renderPreview(await request({ type: 'PREVIEW_CAPTURE', input }));
   } catch (error) {
@@ -637,6 +637,30 @@ async function save(): Promise<void> {
   }
 }
 
+async function removeSaved(): Promise<void> {
+  const learningItemId = savedLearningItemId;
+  if (!learningItemId) return;
+  setBusy(removeSavedButton, true, 'מסיר…');
+  try {
+    await request({ type: 'REMOVE_SAVED_ITEM', learningItemId });
+    savedLearningItemId = null;
+    saveEventId = null;
+    phase = nextPhase(phase, 'RESET');
+    successView.hidden = true;
+    const removedSense = document.querySelector<HTMLInputElement>(
+      `input[name="sense"][value="${learningItemId}"]`
+    )?.closest('label');
+    removedSense?.remove();
+    const newSense = document.querySelector<HTMLInputElement>('input[name="sense"][value="new"]');
+    if (newSense && !sensesElement.querySelector('input[name="sense"]')) newSense.checked = true;
+    showStatus('המילה הוסרה מהשמורים.');
+  } catch (error) {
+    showStatus(userMessage(error), true);
+  } finally {
+    setBusy(removeSavedButton, false);
+  }
+}
+
 function renderAuthMode(): void {
   const login = authMode === 'login';
   element<HTMLButtonElement>('login-tab').classList.toggle('active', login);
@@ -654,6 +678,7 @@ async function authenticated(nextSession: PublicSession): Promise<void> {
   try {
     const fresh = await request({ type: 'GET_BOOTSTRAP' });
     profile = fresh.profile;
+    sourceLanguage.value = profileSourceLanguage();
     targetLanguage.value = profileTargetLanguage();
     setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
     if (fresh.pendingCapture) {
@@ -675,6 +700,7 @@ async function initialize(): Promise<void> {
       return;
     }
     element<HTMLElement>('account-email').textContent = session.user.email;
+    sourceLanguage.value = profileSourceLanguage();
     targetLanguage.value = profileTargetLanguage();
     setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
     showView('capture');
@@ -754,6 +780,7 @@ previewForm.addEventListener('submit', (event) => {
   void save();
 });
 element<HTMLButtonElement>('save-another').addEventListener('click', () => resetCapture());
+removeSavedButton.addEventListener('click', () => void removeSaved());
 element<HTMLButtonElement>('speak-button').addEventListener('click', () => {
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(sourceText.value.trim());
@@ -797,5 +824,7 @@ itemType.addEventListener('change', () => {
 const newSenseInput = document.querySelector<HTMLInputElement>('input[name="sense"][value="new"]');
 newSenseInput?.addEventListener('change', resetSaveIntent);
 
+populateLanguageSelect(sourceLanguage, true);
+populateLanguageSelect(targetLanguage);
 renderAuthMode();
 void initialize();
