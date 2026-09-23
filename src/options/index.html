@@ -9,9 +9,17 @@
   <body>
     <main>
       <header>
-        <img src="icons/icon128.png" alt="" width="56" height="56">
+        <img class="brand-logo" src="assets/gotit-logo.svg" alt="GotIt">
         <div><h1 data-i18n="options.title">GotIt settings</h1><p data-i18n="options.subtitle">Customize how words are saved from your browser</p></div>
       </header>
+
+      <aside class="practice-invite">
+        <div>
+          <h2 data-i18n="options.practiceTitle">Your words are ready to practice</h2>
+          <p data-i18n="options.practiceDescription">Open the GotIt web app to review and practice all the words you saved from the extension.</p>
+        </div>
+        <a href="https://gotit.rbaseapp.com" target="_blank" rel="noopener noreferrer" data-i18n="options.practiceAction">Open GotIt and practice</a>
+      </aside>
 
       <section class="card">
         <h2 data-i18n="options.interfaceTitle">Interface</h2>
@@ -23,19 +31,29 @@
             <option value="he" data-i18n="common.hebrew">עברית</option>
           </select>
         </label>
+        <label class="toggle-row theme-toggle-row">
+          <span>
+            <strong id="theme-mode" data-i18n="options.brightMode">Bright Mode</strong>
+            <small data-i18n="options.themeDescription">Switch between Bright Mode and Dark Mode.</small>
+          </span>
+          <input id="dark-mode" type="checkbox" role="switch" aria-label="Dark Mode" data-i18n-aria-label="options.darkMode">
+        </label>
       </section>
 
       <section class="card">
         <h2 data-i18n="options.translationTitle">Translation</h2>
         <p class="description" data-i18n="options.translationDescription">These preferences are saved in your GotIt profile and used on your other devices.</p>
-        <div id="signed-out-notice" class="notice" hidden data-i18n="options.signedOut">Sign in through the extension popup to change translation preferences.</div>
+        <div id="onboarding-notice" class="onboarding-notice" hidden>
+          <strong data-i18n="options.onboardingTitle">Welcome to GotIt</strong>
+          <span data-i18n="options.onboardingDescription">Choose your native language and the language you want to translate from.</span>
+        </div>
+        <div id="signed-out-notice" class="notice" hidden data-i18n="options.signedOut">Your language choices will be saved now and synced to your GotIt profile after you sign in.</div>
         <form id="profile-form">
-          <label><span data-i18n="options.sourceLanguage">Preferred source language</span>
-            <select id="source-language"></select>
-            <small data-i18n="options.sourceHelp">In automatic mode, Google detects the text language.</small>
+          <label><span data-i18n="options.targetLanguage">Your native language</span>
+            <select id="target-language" required></select>
           </label>
-          <label><span data-i18n="options.targetLanguage">Preferred translation language</span>
-            <select id="target-language"></select>
+          <label><span data-i18n="options.sourceLanguage">Translate from</span>
+            <select id="source-language" required></select>
           </label>
           <label><span data-i18n="options.method">Preferred translation method</span>
             <select id="translation-method">

@@ -160,13 +160,31 @@ async function extractContext(tab: chrome.tabs.Tab | undefined, fallbackSelectio
 }
 
 async function bootstrap() {
-  const [session, settings] = await Promise.all([
+  const [session, initialSettings] = await Promise.all([
     getPublicSession(),
     getSettings()
   ]);
+  let settings = initialSettings;
   const pendingCapture = session ? await consumePending() : await getPending();
   let profile = null;
-  if (session) profile = await getProfile().catch(() => null);
+  if (session) {
+    profile = await getProfile().catch(() => null);
+    if (
+      settings.languagePreferencesNeedSync &&
+      settings.defaultSourceLanguage &&
+      settings.defaultTranslationLanguage
+    ) {
+      try {
+        profile = await patchProfile({
+          defaultSourceLanguage: settings.defaultSourceLanguage,
+          defaultTranslationLanguage: settings.defaultTranslationLanguage
+        });
+        settings = await updateSettings({ languagePreferencesNeedSync: false });
+      } catch {
+        // Keep the local preferences pending and retry after the next successful sign-in/bootstrap.
+      }
+    }
+  }
   return { session, profile, settings, pendingCapture };
 }
 
@@ -195,8 +213,11 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
       }
     };
     if (request.translationMethod) input.translationMethod = request.translationMethod;
+    const settings = await getSettings();
+    if (settings.defaultSourceLanguage) input.sourceLanguageCode = settings.defaultSourceLanguage;
+    if (settings.defaultTranslationLanguage) input.translationLanguageCode = settings.defaultTranslationLanguage;
     let preview = await previewCapture(input);
-    const targetLanguage = uiLanguage();
+    const targetLanguage = settings.defaultTranslationLanguage ?? uiLanguage();
     if (preview.requiresLanguageSelection && !preview.translationLanguageCode && targetLanguage) {
       input.translationLanguageCode = targetLanguage;
       preview = await previewCapture(input);
@@ -222,7 +243,8 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     return {
       floatingAction: settings.floatingAction,
       translationMethod: effectiveTranslationMethod(profile?.translationMethodPreference),
-      uiLocale
+      uiLocale,
+      theme: settings.theme
     };
   }
   if (!extensionPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
@@ -238,7 +260,16 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     case 'REMOVE_SAVED_ITEM': await removeSavedItem(request.learningItemId); return null;
     case 'PATCH_PROFILE': return patchProfile(request.patch);
     case 'GET_SETTINGS': return getSettings();
-    case 'UPDATE_SETTINGS': return updateSettings(request.settings);
+    case 'UPDATE_SETTINGS': {
+      const settings = await updateSettings(request.settings);
+      if (request.settings.theme !== undefined) {
+        const tabs = await chrome.tabs.query({});
+        await Promise.allSettled(tabs.flatMap((tab) => tab.id === undefined
+          ? []
+          : [chrome.tabs.sendMessage(tab.id, { type: 'GOTIT_THEME_CHANGED', theme: settings.theme })]));
+      }
+      return settings;
+    }
   }
 }
 
@@ -252,7 +283,7 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 void chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
 void chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
@@ -262,6 +293,9 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   });
   void syncFloatingContentScript();
+  if (details.reason === 'install') {
+    void chrome.tabs.create({ url: chrome.runtime.getURL('options.html?onboarding=1') });
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => { void syncFloatingContentScript(); });

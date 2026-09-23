@@ -10,6 +10,7 @@ import type {
   CapturePreview,
   ClientError,
   EnrichmentCandidate,
+  ExtensionSettings,
   GotItProfile,
   PublicSession,
   TranslationMethod
@@ -65,6 +66,7 @@ const previewButton = element<HTMLButtonElement>('preview-button');
 let phase: CapturePhase = 'IDLE';
 let session: PublicSession | null = null;
 let profile: GotItProfile | null = null;
+let extensionSettings: ExtensionSettings | null = null;
 let context: CaptureContext | null = null;
 let preview: CapturePreview | null = null;
 let selectedCandidate: EnrichmentCandidate | null = null;
@@ -162,6 +164,10 @@ function showView(view: 'auth' | 'capture'): void {
   captureView.hidden = view !== 'capture';
 }
 
+function applyTheme(theme: 'light' | 'dark'): void {
+  document.documentElement.dataset.theme = theme;
+}
+
 function canonicalLanguage(value: string): string | null {
   try {
     return Intl.getCanonicalLocales(value.trim())[0] ?? null;
@@ -175,11 +181,14 @@ function isHebrewLanguage(value: string | null | undefined): boolean {
 }
 
 function profileTargetLanguage(): string {
-  return profile?.defaultTranslationLanguage ?? canonicalLanguage(chrome.i18n.getUILanguage())?.split('-')[0] ?? 'en';
+  return profile?.defaultTranslationLanguage
+    ?? extensionSettings?.defaultTranslationLanguage
+    ?? canonicalLanguage(chrome.i18n.getUILanguage())?.split('-')[0]
+    ?? 'en';
 }
 
 function profileSourceLanguage(): string {
-  return profile?.defaultSourceLanguage ?? '';
+  return profile?.defaultSourceLanguage ?? extensionSettings?.defaultSourceLanguage ?? '';
 }
 
 function currentMethod(): TranslationMethod {
@@ -681,6 +690,8 @@ async function authenticated(nextSession: PublicSession): Promise<void> {
   try {
     const fresh = await request({ type: 'GET_BOOTSTRAP' });
     profile = fresh.profile;
+    extensionSettings = fresh.settings;
+    applyTheme(fresh.settings.theme);
     sourceLanguage.value = profileSourceLanguage();
     targetLanguage.value = profileTargetLanguage();
     setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
@@ -697,6 +708,8 @@ async function initialize(): Promise<void> {
   try {
     const data: BootstrapData = await request({ type: 'GET_BOOTSTRAP' });
     profile = data.profile;
+    extensionSettings = data.settings;
+    applyTheme(data.settings.theme);
     session = data.session;
     if (!session) {
       showView('auth');

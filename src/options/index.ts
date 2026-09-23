@@ -22,9 +22,12 @@ const sourceLanguage = element<HTMLSelectElement>('source-language');
 const targetLanguage = element<HTMLSelectElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
 const floating = element<HTMLInputElement>('floating-action');
+const darkMode = element<HTMLInputElement>('dark-mode');
+const themeMode = element<HTMLElement>('theme-mode');
 const uiLanguage = element<HTMLSelectElement>('ui-language');
 const status = element<HTMLElement>('status');
 let statusTimer: number | null = null;
+let signedIn = false;
 
 async function request<K extends keyof ResponseMap>(
   value: Extract<ExtensionRequest, { type: K }>
@@ -54,21 +57,32 @@ function validLanguage(value: string): string | null {
   try { return Intl.getCanonicalLocales(value.trim())[0] ?? null; } catch { return null; }
 }
 
+function applyTheme(theme: 'light' | 'dark'): void {
+  document.documentElement.dataset.theme = theme;
+  darkMode.checked = theme === 'dark';
+  themeMode.textContent = t(theme === 'dark' ? 'options.darkMode' : 'options.brightMode');
+}
+
 async function initialize(): Promise<void> {
   try {
     uiLanguage.value = await getUiLocalePreference();
     const data = await request({ type: 'GET_BOOTSTRAP' });
+    signedIn = Boolean(data.session);
     floating.checked = data.settings.floatingAction;
-    if (!data.session) {
-      element<HTMLElement>('signed-out-notice').hidden = false;
-      profileForm.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLButtonElement>('input,select,button').forEach((control) => { control.disabled = true; });
-      return;
-    }
-    sourceLanguage.value = data.profile?.defaultSourceLanguage ?? '';
+    applyTheme(data.settings.theme);
+    sourceLanguage.value = data.profile?.defaultSourceLanguage
+      ?? data.settings.defaultSourceLanguage
+      ?? 'en';
     targetLanguage.value = data.profile?.defaultTranslationLanguage
+      ?? data.settings.defaultTranslationLanguage
       ?? validLanguage(chrome.i18n.getUILanguage())?.split('-')[0]
       ?? 'en';
     method.value = data.profile?.translationMethodPreference ?? 'auto';
+    if (!data.session) {
+      element<HTMLElement>('signed-out-notice').hidden = false;
+      method.disabled = true;
+      return;
+    }
   } catch (error) {
     notify(message(error), true);
   }
@@ -76,25 +90,46 @@ async function initialize(): Promise<void> {
 
 profileForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  const source = sourceLanguage.value ? validLanguage(sourceLanguage.value) : null;
+  const source = validLanguage(sourceLanguage.value);
   const language = validLanguage(targetLanguage.value);
-  if (!language) { notify(t('options.invalidLanguage'), true); return; }
+  if (!source || !language || source === language) { notify(t('options.invalidLanguage'), true); return; }
   const button = element<HTMLButtonElement>('save-profile');
   button.disabled = true;
-  void request({
-    type: 'PATCH_PROFILE',
-    patch: {
-      defaultSourceLanguage: source,
-      defaultTranslationLanguage: language,
-      translationMethodPreference: method.value as TranslationMethod
+  void (async () => {
+    await request({
+      type: 'UPDATE_SETTINGS',
+      settings: {
+        onboardingComplete: true,
+        defaultSourceLanguage: source,
+        defaultTranslationLanguage: language,
+        languagePreferencesNeedSync: true
+      }
+    });
+    if (signedIn) {
+      await request({
+        type: 'PATCH_PROFILE',
+        patch: {
+          defaultSourceLanguage: source,
+          defaultTranslationLanguage: language,
+          translationMethodPreference: method.value as TranslationMethod
+        }
+      });
+      await request({ type: 'UPDATE_SETTINGS', settings: { languagePreferencesNeedSync: false } });
     }
-  }).then(() => notify(t('options.saved')))
+    document.body.classList.remove('onboarding');
+    element<HTMLElement>('onboarding-notice').hidden = true;
+  })().then(() => notify(signedIn ? t('options.saved') : t('options.savedLocally')))
     .catch((error: unknown) => notify(message(error), true))
     .finally(() => { button.disabled = false; });
 });
 
-populateLanguageSelect(sourceLanguage, true);
+populateLanguageSelect(sourceLanguage);
 populateLanguageSelect(targetLanguage);
+
+if (new URLSearchParams(window.location.search).get('onboarding') === '1') {
+  document.body.classList.add('onboarding');
+  element<HTMLElement>('onboarding-notice').hidden = false;
+}
 
 floating.addEventListener('change', () => {
   const desired = floating.checked;
@@ -104,6 +139,19 @@ floating.addEventListener('change', () => {
     notify(desired ? t('options.enabled') : t('options.disabled'));
   })().catch((error: unknown) => { floating.checked = !desired; notify(message(error), true); })
     .finally(() => { floating.disabled = false; });
+});
+
+darkMode.addEventListener('change', () => {
+  const theme = darkMode.checked ? 'dark' : 'light';
+  applyTheme(theme);
+  darkMode.disabled = true;
+  void request({ type: 'UPDATE_SETTINGS', settings: { theme } })
+    .then(() => notify(t(theme === 'dark' ? 'options.darkModeEnabled' : 'options.brightModeEnabled')))
+    .catch((error: unknown) => {
+      applyTheme(theme === 'dark' ? 'light' : 'dark');
+      notify(message(error), true);
+    })
+    .finally(() => { darkMode.disabled = false; });
 });
 
 uiLanguage.addEventListener('change', () => {

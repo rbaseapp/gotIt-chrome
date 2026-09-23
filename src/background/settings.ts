@@ -2,7 +2,25 @@ import type { ExtensionSettings } from '../shared/types';
 
 const SETTINGS_KEY = 'gotit.settings.v1';
 const CONTENT_SCRIPT_ID = 'gotit-floating-action';
-export const defaultSettings: ExtensionSettings = { floatingAction: true, autoCloseAfterSave: false };
+
+export const defaultSettings: ExtensionSettings = {
+  floatingAction: true,
+  autoCloseAfterSave: false,
+  theme: 'light',
+  onboardingComplete: false,
+  defaultSourceLanguage: null,
+  defaultTranslationLanguage: null,
+  languagePreferencesNeedSync: false
+};
+
+function optionalLanguage(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    return Intl.getCanonicalLocales(value.trim())[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export function resolveSettings(value: unknown): ExtensionSettings {
   const stored = typeof value === 'object' && value !== null
@@ -14,7 +32,16 @@ export function resolveSettings(value: unknown): ExtensionSettings {
       : defaultSettings.floatingAction,
     autoCloseAfterSave: typeof stored?.autoCloseAfterSave === 'boolean'
       ? stored.autoCloseAfterSave
-      : defaultSettings.autoCloseAfterSave
+      : defaultSettings.autoCloseAfterSave,
+    theme: stored?.theme === 'dark' ? 'dark' : 'light',
+    onboardingComplete: typeof stored?.onboardingComplete === 'boolean'
+      ? stored.onboardingComplete
+      : defaultSettings.onboardingComplete,
+    defaultSourceLanguage: optionalLanguage(stored?.defaultSourceLanguage),
+    defaultTranslationLanguage: optionalLanguage(stored?.defaultTranslationLanguage),
+    languagePreferencesNeedSync: typeof stored?.languagePreferencesNeedSync === 'boolean'
+      ? stored.languagePreferencesNeedSync
+      : defaultSettings.languagePreferencesNeedSync
   };
 }
 
@@ -27,7 +54,18 @@ export async function updateSettings(patch: Partial<ExtensionSettings>): Promise
   const current = await getSettings();
   const next: ExtensionSettings = {
     floatingAction: typeof patch.floatingAction === 'boolean' ? patch.floatingAction : current.floatingAction,
-    autoCloseAfterSave: typeof patch.autoCloseAfterSave === 'boolean' ? patch.autoCloseAfterSave : current.autoCloseAfterSave
+    autoCloseAfterSave: typeof patch.autoCloseAfterSave === 'boolean' ? patch.autoCloseAfterSave : current.autoCloseAfterSave,
+    theme: patch.theme === 'light' || patch.theme === 'dark' ? patch.theme : current.theme,
+    onboardingComplete: typeof patch.onboardingComplete === 'boolean' ? patch.onboardingComplete : current.onboardingComplete,
+    defaultSourceLanguage: patch.defaultSourceLanguage === undefined
+      ? current.defaultSourceLanguage
+      : optionalLanguage(patch.defaultSourceLanguage),
+    defaultTranslationLanguage: patch.defaultTranslationLanguage === undefined
+      ? current.defaultTranslationLanguage
+      : optionalLanguage(patch.defaultTranslationLanguage),
+    languagePreferencesNeedSync: typeof patch.languagePreferencesNeedSync === 'boolean'
+      ? patch.languagePreferencesNeedSync
+      : current.languagePreferencesNeedSync
   };
   await chrome.storage.local.set({ [SETTINGS_KEY]: next });
   await syncFloatingContentScript(next);

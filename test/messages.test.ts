@@ -69,6 +69,31 @@ test('accepts an automatic or explicit source-language profile preference', () =
   );
 });
 
+test('accepts bounded first-run language settings', () => {
+  const request = {
+    type: 'UPDATE_SETTINGS',
+    settings: {
+      onboardingComplete: true,
+      defaultSourceLanguage: 'en',
+      defaultTranslationLanguage: 'he',
+      languagePreferencesNeedSync: true
+    }
+  } as const;
+  assert.deepEqual(parseRequest(request), request);
+  assert.equal(parseRequest({
+    type: 'UPDATE_SETTINGS',
+    settings: { defaultSourceLanguage: 7 }
+  }), null);
+});
+
+test('accepts only bright and dark theme settings', () => {
+  assert.deepEqual(
+    parseRequest({ type: 'UPDATE_SETTINGS', settings: { theme: 'dark' } }),
+    { type: 'UPDATE_SETTINGS', settings: { theme: 'dark' } }
+  );
+  assert.equal(parseRequest({ type: 'UPDATE_SETTINGS', settings: { theme: 'sepia' } }), null);
+});
+
 test('accepts only a strictly shaped saved-item update', () => {
   const request = {
     type: 'UPDATE_SAVED_ITEM',

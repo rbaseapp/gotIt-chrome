@@ -10,12 +10,14 @@
     <main id="app">
       <header class="app-header">
         <div class="brand">
-          <img src="icons/icon48.png" alt="" width="36" height="36">
-          <div><strong>GotIt</strong><span data-i18n="popup.tagline">Learn from context</span></div>
+          <img class="brand-logo" src="assets/gotit-logo.svg" alt="GotIt">
         </div>
-        <button id="settings-button" class="icon-button" type="button" aria-label="Open settings" title="Open settings" data-i18n-aria-label="popup.openSettings" data-i18n-title="popup.openSettings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.55-1.03H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1-1.55V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.55 1H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
+        <div class="header-actions">
+          <a class="web-app-link" href="https://gotit.rbaseapp.com" target="_blank" rel="noopener noreferrer" data-i18n="popup.webAppLink">Web app</a>
+          <button id="settings-button" class="icon-button" type="button" aria-label="Open settings" title="Open settings" data-i18n-aria-label="popup.openSettings" data-i18n-title="popup.openSettings">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.55-1.03H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1-1.55V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.55 1H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
       </header>
 
       <section id="loading-view" class="center-view" aria-live="polite">
@@ -51,6 +53,13 @@
         </div>
 
         <div id="capture-editor">
+          <aside class="practice-invite">
+            <div>
+              <strong data-i18n="popup.practiceTitle">Ready to practice?</strong>
+              <p data-i18n="popup.practiceDescription">Your saved words are waiting for you in the GotIt web app.</p>
+            </div>
+            <a href="https://gotit.rbaseapp.com" target="_blank" rel="noopener noreferrer" data-i18n="popup.practiceAction">Practice words</a>
+          </aside>
           <section class="source-card">
             <div class="field-heading">
               <span data-i18n="popup.sourceText">Word or phrase</span>

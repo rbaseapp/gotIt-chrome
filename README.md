@@ -36,6 +36,12 @@ npm run package
 
 The unpacked extension is generated in `dist/`. The versioned Web Store ZIP is generated in `artifacts/`.
 
+Unpacked builds use the committed public key in `scripts/extension-identity.mjs`, so their development extension ID is stable across computers and directories:
+
+```text
+coeeepgmiclcodbjgkimefabjedbkjpp
+```
+
 For local backend development:
 
 ```powershell
@@ -46,17 +52,18 @@ Public build settings can be overridden with `CORE_API_BASE`, `GOTIT_API_BASE` a
 
 ## Chrome Web Store release prerequisites
 
-1. Upload a draft to obtain/confirm the permanent extension ID.
-2. Configure that ID in Google Cloud as a Chrome Extension OAuth client and provide the public client ID during the final build.
-3. Register the same OAuth client ID in the production Core database for application `gotit` with client type `chrome_extension`, then verify `/auth/google/access-token`. CORS configuration does not perform this registration. Using the Core administration script with production database credentials:
+1. Upload a draft to obtain the permanent Chrome Web Store item ID; publishing is not required.
+2. In the draft's **Package** tab, choose **View public key**, replace the development key and ID in `scripts/extension-identity.mjs`, rebuild, and confirm the generated extension ID matches the store item ID.
+3. Configure that permanent ID in Google Cloud as a Chrome Extension OAuth client and provide the public client ID during the final build.
+4. Register the same OAuth client ID in the production Core database for application `gotit` with client type `chrome_extension`, then verify `/auth/google/access-token`. CORS configuration does not perform this registration. Using the Core administration script with production database credentials:
 
    ```powershell
    node dist/scripts/configure-google.js --key gotit --client-id <client-id>.apps.googleusercontent.com --client-type chrome_extension
    ```
-4. Deploy the current 41-route GotIt backend release and configure valid provider credentials/models and `ENRICHMENT_SIGNING_SECRET` on the server.
-5. If the deployed HTTP policy requires it, allow the exact `chrome-extension://<extension-id>` origin in GotIt/Core configuration.
-6. Host the text from `PRIVACY.md` at a public HTTPS URL and enter it in the Store listing.
-7. Run authenticated production acceptance for email, Google, preview, new item, merge, new sense, refresh rotation and logout.
+5. Deploy the current 41-route GotIt backend release and configure valid provider credentials/models and `ENRICHMENT_SIGNING_SECRET` on the server.
+6. If the deployed HTTP policy requires it, allow the exact `chrome-extension://<extension-id>` origin in GotIt/Core configuration.
+7. Host the text from `PRIVACY.md` at a public HTTPS URL and enter it in the Store listing.
+8. Run authenticated production acceptance for email, Google, preview, new item, merge, new sense, refresh rotation and logout.
 
 The default production endpoints are the endpoints already used by the prototype. Verify them against the actual Render services before publishing.
 

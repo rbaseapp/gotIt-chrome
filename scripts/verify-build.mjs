@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXTENSION_ID, EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -14,6 +16,7 @@ function leafKeys(value, prefix = '') {
 }
 
 assert.equal(manifest.manifest_version, 3);
+assert.equal(manifest.key, EXTENSION_PUBLIC_KEY);
 assert.equal(manifest.default_locale, 'en');
 assert.match(manifest.name, /^__MSG_/u);
 const [uiEn, uiHe, chromeEn, chromeHe] = await Promise.all([
@@ -24,6 +27,11 @@ const [uiEn, uiHe, chromeEn, chromeHe] = await Promise.all([
 ]);
 assert.deepEqual(leafKeys(uiEn).sort(), leafKeys(uiHe).sort());
 assert.deepEqual(Object.keys(chromeEn).sort(), Object.keys(chromeHe).sort());
+const publicKeyDer = Buffer.from(manifest.key, 'base64');
+const derivedExtensionId = [...createHash('sha256').update(publicKeyDer).digest().subarray(0, 16)]
+  .map((byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 0x0f))}`)
+  .join('');
+assert.equal(derivedExtensionId, EXTENSION_ID);
 assert.deepEqual(manifest.permissions.sort(), ['activeTab', 'contextMenus', 'identity', 'scripting', 'storage'].sort());
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.optional_host_permissions, undefined);
@@ -53,4 +61,11 @@ for (const html of ['popup.html', 'options.html']) {
 for (const icon of ['icon16.png', 'icon32.png', 'icon48.png', 'icon128.png']) {
   assert.ok((await stat(path.join(dist, 'icons', icon))).size > 100, `${icon} is missing or empty`);
 }
-console.log('Verified MV3 package security, permissions, CSP, assets and secret-free provider boundary.');
+for (const asset of ['gotit-icon.svg', 'gotit-logo.svg']) {
+  assert.ok((await stat(path.join(dist, 'assets', asset))).size > 100, `${asset} is missing or empty`);
+}
+assert.deepEqual(manifest.web_accessible_resources, [{
+  resources: ['assets/gotit-icon.svg', 'assets/gotit-logo.svg'],
+  matches: ['http://*/*', 'https://*/*']
+}]);
+console.log(`Verified MV3 package identity (${EXTENSION_ID}), security, permissions, CSP, assets and secret-free provider boundary.`);

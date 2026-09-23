@@ -1,13 +1,39 @@
 export const LANGUAGE_OPTIONS = [
-  ['en', 'English'], ['he', 'עברית'], ['ar', 'العربية'], ['es', 'Español'],
-  ['fr', 'Français'], ['de', 'Deutsch'], ['it', 'Italiano'], ['pt', 'Português'],
-  ['pt-BR', 'Português (Brasil)'], ['ru', 'Русский'], ['uk', 'Українська'],
-  ['pl', 'Polski'], ['nl', 'Nederlands'], ['tr', 'Türkçe'], ['el', 'Ελληνικά'],
-  ['hi', 'हिन्दी'], ['zh-CN', '中文（简体）'], ['zh-TW', '中文（繁體）'],
-  ['ja', '日本語'], ['ko', '한국어'], ['vi', 'Tiếng Việt'], ['th', 'ไทย'],
-  ['id', 'Bahasa Indonesia'], ['sv', 'Svenska'], ['da', 'Dansk'], ['no', 'Norsk'],
-  ['fi', 'Suomi'], ['cs', 'Čeština'], ['ro', 'Română'], ['hu', 'Magyar']
+  ['en', 'English', 'English'],
+  ['he', 'Hebrew', 'עברית'],
+  ['ar', 'Arabic', 'العربية'],
+  ['es', 'Spanish', 'Español'],
+  ['fr', 'French', 'Français'],
+  ['de', 'German', 'Deutsch'],
+  ['it', 'Italian', 'Italiano'],
+  ['pt', 'Portuguese', 'Português'],
+  ['pt-BR', 'Portuguese (Brazil)', 'Português (Brasil)'],
+  ['ru', 'Russian', 'Русский'],
+  ['uk', 'Ukrainian', 'Українська'],
+  ['pl', 'Polish', 'Polski'],
+  ['nl', 'Dutch', 'Nederlands'],
+  ['tr', 'Turkish', 'Türkçe'],
+  ['el', 'Greek', 'Ελληνικά'],
+  ['hi', 'Hindi', 'हिन्दी'],
+  ['zh-CN', 'Chinese (Simplified)', '简体中文'],
+  ['zh-TW', 'Chinese (Traditional)', '繁體中文'],
+  ['ja', 'Japanese', '日本語'],
+  ['ko', 'Korean', '한국어'],
+  ['vi', 'Vietnamese', 'Tiếng Việt'],
+  ['th', 'Thai', 'ไทย'],
+  ['id', 'Indonesian', 'Bahasa Indonesia'],
+  ['sv', 'Swedish', 'Svenska'],
+  ['da', 'Danish', 'Dansk'],
+  ['no', 'Norwegian', 'Norsk'],
+  ['fi', 'Finnish', 'Suomi'],
+  ['cs', 'Czech', 'Čeština'],
+  ['ro', 'Romanian', 'Română'],
+  ['hu', 'Hungarian', 'Magyar']
 ] as const;
+
+export function languageOptionLabel(englishName: string, nativeName: string): string {
+  return englishName === nativeName ? englishName : `${englishName} — ${nativeName}`;
+}
 
 export function populateLanguageSelect(select: HTMLSelectElement, includeAuto = false): void {
   if (includeAuto) {
@@ -18,11 +44,10 @@ export function populateLanguageSelect(select: HTMLSelectElement, includeAuto = 
       : 'Automatic detection (Google)';
     select.append(automatic);
   }
-  const displayNames = new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'language' });
-  for (const [code, label] of LANGUAGE_OPTIONS) {
+  for (const [code, englishName, nativeName] of LANGUAGE_OPTIONS) {
     const option = document.createElement('option');
     option.value = code;
-    option.textContent = `${displayNames.of(code) ?? label} · ${code}`;
+    option.textContent = languageOptionLabel(englishName, nativeName);
     select.append(option);
   }
 }

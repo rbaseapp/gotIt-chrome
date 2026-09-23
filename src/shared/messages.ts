@@ -66,7 +66,7 @@ export interface ResponseMap {
   AUTH_GOOGLE: PublicSession;
   LOGOUT: null;
   GET_ACTIVE_CONTEXT: CaptureContext;
-  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai'; uiLocale: 'en' | 'he' };
+  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai'; uiLocale: 'en' | 'he'; theme: 'light' | 'dark' };
   CONTENT_CAPTURE: null;
   INLINE_PREVIEW: InlinePreviewResult;
   INLINE_SAVE: CaptureResult;
@@ -180,10 +180,23 @@ function isSavedItemPatch(value: unknown): value is SavedItemPatch {
 
 function isSettingsPatch(value: unknown): value is Partial<ExtensionSettings> {
   if (!isRecord(value)) return false;
-  if (!hasOnlyKeys(value, ['floatingAction', 'autoCloseAfterSave'])) return false;
+  if (!hasOnlyKeys(value, [
+    'floatingAction',
+    'autoCloseAfterSave',
+    'theme',
+    'onboardingComplete',
+    'defaultSourceLanguage',
+    'defaultTranslationLanguage',
+    'languagePreferencesNeedSync'
+  ])) return false;
   return (
     (value.floatingAction === undefined || typeof value.floatingAction === 'boolean') &&
-    (value.autoCloseAfterSave === undefined || typeof value.autoCloseAfterSave === 'boolean')
+    (value.autoCloseAfterSave === undefined || typeof value.autoCloseAfterSave === 'boolean') &&
+    (value.theme === undefined || value.theme === 'light' || value.theme === 'dark') &&
+    (value.onboardingComplete === undefined || typeof value.onboardingComplete === 'boolean') &&
+    (value.defaultSourceLanguage === undefined || nullableString(value.defaultSourceLanguage)) &&
+    (value.defaultTranslationLanguage === undefined || nullableString(value.defaultTranslationLanguage)) &&
+    (value.languagePreferencesNeedSync === undefined || typeof value.languagePreferencesNeedSync === 'boolean')
   );
 }
 

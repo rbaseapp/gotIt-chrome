@@ -102,6 +102,11 @@ export interface PublicSession {
 export interface ExtensionSettings {
   floatingAction: boolean;
   autoCloseAfterSave: boolean;
+  theme: 'light' | 'dark';
+  onboardingComplete: boolean;
+  defaultSourceLanguage: string | null;
+  defaultTranslationLanguage: string | null;
+  languagePreferencesNeedSync: boolean;
 }
 
 export interface CaptureSaveInput {

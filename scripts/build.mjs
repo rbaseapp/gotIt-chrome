@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
+import { EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -27,6 +28,7 @@ function originPattern(value) {
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(path.join(dist, 'icons'), { recursive: true });
+await mkdir(path.join(dist, 'assets'), { recursive: true });
 
 await build({
   entryPoints: {
@@ -55,11 +57,14 @@ await Promise.all([
   cp(path.join(root, 'src/popup/styles.css'), path.join(dist, 'popup.css')),
   cp(path.join(root, 'src/options/index.html'), path.join(dist, 'options.html')),
   cp(path.join(root, 'src/options/styles.css'), path.join(dist, 'options.css')),
+  cp(path.join(root, 'src/assets/gotit-icon.svg'), path.join(dist, 'assets/gotit-icon.svg')),
+  cp(path.join(root, 'src/assets/gotit-logo.svg'), path.join(dist, 'assets/gotit-logo.svg')),
   cp(path.join(root, 'src/_locales'), path.join(dist, '_locales'), { recursive: true })
 ]);
 
 const manifest = {
   manifest_version: 3,
+  key: EXTENSION_PUBLIC_KEY,
   default_locale: 'en',
   name: mode === 'development' ? '__MSG_extensionNameDev__' : '__MSG_extensionName__',
   short_name: 'GotIt',
@@ -84,11 +89,15 @@ const manifest = {
     client_id: googleClientId,
     scopes: ['openid', 'https://www.googleapis.com/auth/userinfo.email', 'https://www.googleapis.com/auth/userinfo.profile']
   },
+  web_accessible_resources: [{
+    resources: ['assets/gotit-icon.svg', 'assets/gotit-logo.svg'],
+    matches: ['http://*/*', 'https://*/*']
+  }],
   content_security_policy: { extension_pages: "script-src 'self'; object-src 'self'" }
 };
 await writeFile(path.join(dist, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
-const logo = await readFile(path.join(root, 'src/assets/logo.svg'));
+const logo = await readFile(path.join(root, 'src/assets/gotit-icon.svg'));
 await Promise.all([16, 32, 48, 128].map((size) =>
   sharp(logo).resize(size, size).png().toFile(path.join(dist, 'icons', `icon${size}.png`))
 ));
