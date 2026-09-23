@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — Учите слова в контексте" },
+  "extensionNameDev": { "message": "GotIt (разработка)" },
+  "extensionDescription": { "message": "Сохраняйте слова и фразы вместе с предложением, исходной страницей и переводом, а затем учите их в GotIt." },
+  "actionTitle": { "message": "Сохранить в GotIt" }
+}

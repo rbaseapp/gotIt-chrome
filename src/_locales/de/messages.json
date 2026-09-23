@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — Wörter im Kontext lernen" },
+  "extensionNameDev": { "message": "GotIt (Entwicklung)" },
+  "extensionDescription": { "message": "Speichere Wörter und Ausdrücke mit Satz, Quellseite und Übersetzung und lerne sie anschließend in GotIt." },
+  "actionTitle": { "message": "In GotIt speichern" }
+}

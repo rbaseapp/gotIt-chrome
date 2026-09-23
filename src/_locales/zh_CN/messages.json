@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — 在语境中学习单词" },
+  "extensionNameDev": { "message": "GotIt（开发版）" },
+  "extensionDescription": { "message": "保存单词和短语及其例句、来源页面和翻译，然后在 GotIt 中学习。" },
+  "actionTitle": { "message": "保存到 GotIt" }
+}

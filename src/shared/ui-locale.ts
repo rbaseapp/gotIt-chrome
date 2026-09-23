@@ -1,12 +1,13 @@
 export const UI_LOCALE_STORAGE_KEY = 'gotit.uiLocale.v1';
-export type UiLocale = 'en' | 'he';
+export const SUPPORTED_UI_LOCALES = ['en', 'he', 'zh', 'ar', 'ru', 'de', 'fr', 'es'] as const;
+export type UiLocale = (typeof SUPPORTED_UI_LOCALES)[number];
 export type UiLocalePreference = UiLocale | 'auto';
 
 export function normalizeUiLocale(value: string | null | undefined): UiLocale | null {
   if (!value) return null;
   try {
     const language = Intl.getCanonicalLocales(value)[0]?.split('-')[0];
-    return language === 'en' || language === 'he' ? language : null;
+    return SUPPORTED_UI_LOCALES.find((locale) => locale === language) ?? null;
   } catch {
     return null;
   }

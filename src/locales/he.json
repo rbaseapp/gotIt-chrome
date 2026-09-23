@@ -3,7 +3,13 @@
     "loading": "טוען…",
     "automatic": "אוטומטי (שפת הדפדפן)",
     "english": "English",
-    "hebrew": "עברית"
+    "hebrew": "עברית",
+    "chinese": "中文",
+    "arabic": "العربية",
+    "russian": "Русский",
+    "german": "Deutsch",
+    "french": "Français",
+    "spanish": "Español"
   },
   "options": {
     "title": "הגדרות GotIt",

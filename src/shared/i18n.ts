@@ -1,10 +1,17 @@
 import i18next from 'i18next';
+import ar from '../locales/ar.json';
+import de from '../locales/de.json';
 import en from '../locales/en.json';
+import es from '../locales/es.json';
+import fr from '../locales/fr.json';
 import he from '../locales/he.json';
+import ru from '../locales/ru.json';
+import zh from '../locales/zh.json';
 import {
   getResolvedUiLocale,
   getUiLocalePreference,
   setUiLocalePreference as persistUiLocalePreference,
+  SUPPORTED_UI_LOCALES,
   type UiLocale,
   type UiLocalePreference
 } from './ui-locale';
@@ -16,12 +23,18 @@ export async function initializeI18n(): Promise<UiLocale> {
   if (!i18next.isInitialized) {
     await i18next.init({
       resources: {
+        ar: { translation: ar },
+        de: { translation: de },
         en: { translation: en },
-        he: { translation: he }
+        es: { translation: es },
+        fr: { translation: fr },
+        he: { translation: he },
+        ru: { translation: ru },
+        zh: { translation: zh }
       },
       lng: locale,
       fallbackLng: 'en',
-      supportedLngs: ['en', 'he'],
+      supportedLngs: [...SUPPORTED_UI_LOCALES],
       interpolation: { escapeValue: false }
     });
   } else {
@@ -39,7 +52,7 @@ export async function setUiLocalePreference(preference: UiLocalePreference): Pro
 
 export function applyDocumentLocale(locale: UiLocale): void {
   document.documentElement.lang = locale;
-  document.documentElement.dir = locale === 'he' ? 'rtl' : 'ltr';
+  document.documentElement.dir = locale === 'he' || locale === 'ar' ? 'rtl' : 'ltr';
 }
 
 export function translateDocument(root: ParentNode = document): void {

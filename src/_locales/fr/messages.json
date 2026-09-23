@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — Apprendre les mots en contexte" },
+  "extensionNameDev": { "message": "GotIt (développement)" },
+  "extensionDescription": { "message": "Enregistrez des mots et expressions avec leur phrase, leur page source et leur traduction, puis apprenez-les dans GotIt." },
+  "actionTitle": { "message": "Enregistrer dans GotIt" }
+}

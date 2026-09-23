@@ -11,6 +11,7 @@ import type {
   ResponseEnvelope,
   TranslationMethod
 } from './types';
+import type { UiLocale } from './ui-locale';
 
 export type ExtensionRequest =
   | { type: 'GET_BOOTSTRAP' }
@@ -66,7 +67,7 @@ export interface ResponseMap {
   AUTH_GOOGLE: PublicSession;
   LOGOUT: null;
   GET_ACTIVE_CONTEXT: CaptureContext;
-  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai'; aiTranslationAvailable: boolean; uiLocale: 'en' | 'he'; theme: 'light' | 'dark' };
+  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai'; aiTranslationAvailable: boolean; uiLocale: UiLocale; theme: 'light' | 'dark' };
   CONTENT_CAPTURE: null;
   INLINE_PREVIEW: InlinePreviewResult;
   INLINE_SAVE: CaptureResult;

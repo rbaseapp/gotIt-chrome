@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — تعلّم الكلمات في سياقها" },
+  "extensionNameDev": { "message": "GotIt (نسخة التطوير)" },
+  "extensionDescription": { "message": "احفظ الكلمات والعبارات مع جملتها وصفحة المصدر وترجمتها، ثم تعلّمها في GotIt." },
+  "actionTitle": { "message": "حفظ في GotIt" }
+}

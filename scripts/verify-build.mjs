@@ -19,14 +19,26 @@ assert.equal(manifest.manifest_version, 3);
 assert.equal(manifest.key, EXTENSION_PUBLIC_KEY);
 assert.equal(manifest.default_locale, 'en');
 assert.match(manifest.name, /^__MSG_/u);
-const [uiEn, uiHe, chromeEn, chromeHe] = await Promise.all([
-  readFile(path.join(root, 'src/locales/en.json'), 'utf8').then(JSON.parse),
-  readFile(path.join(root, 'src/locales/he.json'), 'utf8').then(JSON.parse),
-  readFile(path.join(dist, '_locales/en/messages.json'), 'utf8').then(JSON.parse),
-  readFile(path.join(dist, '_locales/he/messages.json'), 'utf8').then(JSON.parse)
-]);
-assert.deepEqual(leafKeys(uiEn).sort(), leafKeys(uiHe).sort());
-assert.deepEqual(Object.keys(chromeEn).sort(), Object.keys(chromeHe).sort());
+const localePairs = [
+  ['en', 'en'],
+  ['he', 'he'],
+  ['zh', 'zh_CN'],
+  ['ar', 'ar'],
+  ['ru', 'ru'],
+  ['de', 'de'],
+  ['fr', 'fr'],
+  ['es', 'es']
+];
+const uiCatalogs = await Promise.all(localePairs.map(([ui]) =>
+  readFile(path.join(root, `src/locales/${ui}.json`), 'utf8').then(JSON.parse)));
+const chromeCatalogs = await Promise.all(localePairs.map(([, chrome]) =>
+  readFile(path.join(dist, `_locales/${chrome}/messages.json`), 'utf8').then(JSON.parse)));
+for (const catalog of uiCatalogs.slice(1)) {
+  assert.deepEqual(leafKeys(uiCatalogs[0]).sort(), leafKeys(catalog).sort());
+}
+for (const catalog of chromeCatalogs.slice(1)) {
+  assert.deepEqual(Object.keys(chromeCatalogs[0]).sort(), Object.keys(catalog).sort());
+}
 const publicKeyDer = Buffer.from(manifest.key, 'base64');
 const derivedExtensionId = [...createHash('sha256').update(publicKeyDer).digest().subarray(0, 16)]
   .map((byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 0x0f))}`)
