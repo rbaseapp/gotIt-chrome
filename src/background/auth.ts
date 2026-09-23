@@ -1,4 +1,4 @@
-import type { ClientError, CoreUser, PublicSession } from '../shared/types';
+import type { ClientError, CoreBillingStatus, CoreUser, PublicSession } from '../shared/types';
 
 const APPLICATION_KEY = 'gotit';
 const PERSISTENT_KEY = 'gotit.auth.persistent.v1';
@@ -104,6 +104,34 @@ async function corePost(path: string, body: unknown): Promise<Record<string, unk
     throw new RequestError('OFFLINE', 'Core is unreachable');
   }
   return parseResponse(response, 'Authentication failed');
+}
+
+export async function getCoreBillingStatus(): Promise<CoreBillingStatus> {
+  let refreshed = false;
+  while (true) {
+    const token = await getAccessToken(refreshed);
+    let response: Response;
+    try {
+      response = await fetch(`${__CORE_API_BASE__}/billing/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Application-Key': APPLICATION_KEY,
+          'X-Request-Id': crypto.randomUUID()
+        }
+      });
+    } catch {
+      throw new RequestError('OFFLINE', 'Core is unreachable');
+    }
+    if (response.status === 401 && !refreshed) {
+      refreshed = true;
+      continue;
+    }
+    const payload = await parseResponse(response, 'Billing status could not be loaded');
+    if (!['free', 'trial', 'paid'].includes(String(payload.tier)) || typeof payload.access !== 'boolean') {
+      throw new RequestError('INVALID_BILLING_RESPONSE', 'Core returned an invalid billing status');
+    }
+    return { tier: payload.tier as CoreBillingStatus['tier'], access: payload.access };
+  }
 }
 
 async function persistent(): Promise<PersistentAuth | null> {

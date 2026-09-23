@@ -91,6 +91,7 @@ body.onboarding .card:nth-of-type(2) { border-color: var(--green); box-shadow: 0
 :root[data-theme="dark"] .onboarding-notice { border-color: #37634f; }
 :root[data-theme="dark"] input[role="switch"] { background: #536159; }
 #status { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 80px); opacity: 0; transition: .2s ease; background: #345f52; color: #fff; border-radius: 11px; padding: 10px 16px; box-shadow: 0 12px 30px rgba(25,39,34,.22); }
+.paid-feature-note { display: block; margin-top: 6px; color: #7a6cb3; font-weight: 650; }
 #status.visible { transform: translate(-50%, 0); opacity: 1; }
 #status.error { background: #b74735; }
 :focus-visible { outline: 3px solid rgba(44,122,98,.22); outline-offset: 2px; }

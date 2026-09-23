@@ -99,6 +99,11 @@ export interface PublicSession {
   expiresAt: number;
 }
 
+export interface CoreBillingStatus {
+  tier: 'free' | 'trial' | 'paid';
+  access: boolean;
+}
+
 export interface ExtensionSettings {
   floatingAction: boolean;
   autoCloseAfterSave: boolean;
@@ -165,6 +170,7 @@ export type ResponseEnvelope<T> = { ok: true; data: T } | { ok: false; error: Cl
 
 export interface BootstrapData {
   session: PublicSession | null;
+  billing: CoreBillingStatus | null;
   profile: GotItProfile | null;
   settings: ExtensionSettings;
   pendingCapture: CaptureContext | null;

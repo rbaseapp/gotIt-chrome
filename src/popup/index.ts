@@ -79,6 +79,7 @@ let sourceEditing = true;
 let translationEditing = false;
 let itemTypeManuallyEdited = false;
 let standardMethod: 'auto' | 'dictionary' = 'dictionary';
+let aiTranslationAvailable = false;
 
 async function request<K extends keyof ResponseMap>(
   value: Extract<ExtensionRequest, { type: K }>
@@ -149,7 +150,7 @@ function setBusy(button: HTMLButtonElement, busy: boolean, label?: string): void
       button.setAttribute('aria-label', restoredLabel);
       button.setAttribute('title', restoredLabel);
     }
-    button.disabled = busy;
+    button.disabled = busy || (button === aiTranslation && !aiTranslationAvailable);
     button.classList.toggle('is-busy', busy);
     return;
   }
@@ -197,14 +198,32 @@ function currentMethod(): TranslationMethod {
 }
 
 function setMethod(method: TranslationMethod): void {
+  if (method === 'ai' && !aiTranslationAvailable) method = 'dictionary';
   if (method !== 'ai') standardMethod = method;
   const input = document.querySelector<HTMLInputElement>(`input[name="method"][value="${method}"]`);
   if (input) input.checked = true;
   const aiActive = method === 'ai';
   aiTranslation.setAttribute('aria-pressed', String(aiActive));
-  const label = aiActive ? t('popup.aiActive') : t('popup.translateAi');
+  const label = !aiTranslationAvailable
+    ? t('popup.aiPaidOnly')
+    : aiActive
+      ? t('popup.aiActive')
+      : t('popup.translateAi');
   aiTranslation.setAttribute('aria-label', label);
   aiTranslation.setAttribute('title', label);
+}
+
+function applyAiTranslationAccess(available: boolean): void {
+  aiTranslationAvailable = available;
+  aiTranslation.classList.toggle('paid-locked', !available);
+  aiTranslation.disabled = !available;
+  const label = available ? t('popup.translateAi') : t('popup.aiPaidOnlyButton');
+  const title = available ? label : t('popup.aiPaidOnly');
+  const text = aiTranslation.querySelector<HTMLElement>('span');
+  if (text) text.textContent = label;
+  aiTranslation.setAttribute('aria-label', title);
+  aiTranslation.setAttribute('title', title);
+  if (!available && currentMethod() === 'ai') setMethod('dictionary');
 }
 
 function setSourceEditing(editing: boolean): void {
@@ -686,10 +705,12 @@ function renderAuthMode(): void {
 async function authenticated(nextSession: PublicSession): Promise<void> {
   session = nextSession;
   element<HTMLElement>('account-email').textContent = nextSession.user.email;
+  applyAiTranslationAccess(false);
   showView('capture');
   try {
     const fresh = await request({ type: 'GET_BOOTSTRAP' });
     profile = fresh.profile;
+    applyAiTranslationAccess(fresh.billing?.tier === 'paid' && fresh.billing.access);
     extensionSettings = fresh.settings;
     applyTheme(fresh.settings.theme);
     sourceLanguage.value = profileSourceLanguage();
@@ -708,6 +729,7 @@ async function initialize(): Promise<void> {
   try {
     const data: BootstrapData = await request({ type: 'GET_BOOTSTRAP' });
     profile = data.profile;
+    applyAiTranslationAccess(data.billing?.tier === 'paid' && data.billing.access);
     extensionSettings = data.settings;
     applyTheme(data.settings.theme);
     session = data.session;
@@ -825,6 +847,7 @@ editTranslation.addEventListener('click', () => {
   resetSaveIntent();
 });
 aiTranslation.addEventListener('click', () => {
+  if (!aiTranslationAvailable) return;
   setMethod(currentMethod() === 'ai' ? standardMethod : 'ai');
   resetSaveIntent();
   void loadPreview(aiTranslation);

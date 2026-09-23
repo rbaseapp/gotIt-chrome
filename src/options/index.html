@@ -59,8 +59,9 @@
             <select id="translation-method">
               <option value="auto" data-i18n="options.methodAuto">Automatic — server decides</option>
               <option value="dictionary" data-i18n="options.methodDictionary">Dictionary / Translation API</option>
-              <option value="ai" data-i18n="options.methodAi">AI — context-aware translation</option>
+              <option value="ai" data-i18n="options.methodAi" disabled>AI — context-aware translation</option>
             </select>
+            <small id="ai-paid-note" class="paid-feature-note" hidden data-i18n="options.aiPaidOnly">AI translation is available only with a paid PRO subscription.</small>
           </label>
           <button id="save-profile" class="primary" type="submit" data-i18n="options.save">Save preferences</button>
         </form>

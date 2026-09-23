@@ -21,6 +21,8 @@ const profileForm = element<HTMLFormElement>('profile-form');
 const sourceLanguage = element<HTMLSelectElement>('source-language');
 const targetLanguage = element<HTMLSelectElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
+const aiMethod = method.querySelector<HTMLOptionElement>('option[value="ai"]')!;
+const aiPaidNote = element<HTMLElement>('ai-paid-note');
 const floating = element<HTMLInputElement>('floating-action');
 const darkMode = element<HTMLInputElement>('dark-mode');
 const themeMode = element<HTMLElement>('theme-mode');
@@ -78,6 +80,10 @@ async function initialize(): Promise<void> {
       ?? validLanguage(chrome.i18n.getUILanguage())?.split('-')[0]
       ?? 'en';
     method.value = data.profile?.translationMethodPreference ?? 'auto';
+    const paid = data.billing?.tier === 'paid' && data.billing.access;
+    aiMethod.disabled = !paid;
+    aiPaidNote.hidden = paid;
+    if (!paid && method.value === 'ai') method.value = 'dictionary';
     if (!data.session) {
       element<HTMLElement>('signed-out-notice').hidden = false;
       method.disabled = true;

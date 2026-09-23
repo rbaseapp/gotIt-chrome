@@ -10,6 +10,7 @@ import type {
 } from '../shared/types';
 import { getProfile, patchProfile, previewCapture, removeSavedItem, saveCapture, updateSavedItem } from './api';
 import {
+  getCoreBillingStatus,
   getPublicSession,
   RequestError,
   signInWithEmail,
@@ -167,8 +168,12 @@ async function bootstrap() {
   let settings = initialSettings;
   const pendingCapture = session ? await consumePending() : await getPending();
   let profile = null;
+  let billing = null;
   if (session) {
-    profile = await getProfile().catch(() => null);
+    [profile, billing] = await Promise.all([
+      getProfile().catch(() => null),
+      getCoreBillingStatus().catch(() => null)
+    ]);
     if (
       settings.languagePreferencesNeedSync &&
       settings.defaultSourceLanguage &&
@@ -185,7 +190,7 @@ async function bootstrap() {
       }
     }
   }
-  return { session, profile, settings, pendingCapture };
+  return { session, billing, profile, settings, pendingCapture };
 }
 
 async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Promise<unknown> {
@@ -239,10 +244,19 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
       getPublicSession(),
       getResolvedUiLocale()
     ]);
-    const profile = session ? await getProfile().catch(() => null) : null;
+    const [profile, billing] = session
+      ? await Promise.all([
+          getProfile().catch(() => null),
+          getCoreBillingStatus().catch(() => null)
+        ])
+      : [null, null];
+    const aiTranslationAvailable = billing?.tier === 'paid' && billing.access;
     return {
       floatingAction: settings.floatingAction,
-      translationMethod: effectiveTranslationMethod(profile?.translationMethodPreference),
+      translationMethod: aiTranslationAvailable
+        ? effectiveTranslationMethod(profile?.translationMethodPreference)
+        : 'dictionary',
+      aiTranslationAvailable,
       uiLocale,
       theme: settings.theme
     };

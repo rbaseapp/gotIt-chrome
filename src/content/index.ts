@@ -19,6 +19,7 @@ if (!state.__gotitContentLoaded) {
   let host: HTMLDivElement | null = null;
   let hideTimer: number | null = null;
   let preferredTranslationMethod: 'dictionary' | 'ai' = 'dictionary';
+  let aiTranslationAvailable = false;
   let preferredTheme: 'light' | 'dark' = 'light';
 
   const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
@@ -168,6 +169,7 @@ if (!state.__gotitContentLoaded) {
       .method svg { width:19px; height:19px; }
       .method:hover { border-color:#b9cbc2; background:#eef3f0; color:var(--green-dark); transform:translateY(-1px); }
       .method:disabled { cursor:wait; opacity:.7; transform:none; }
+      .method.paid-locked:disabled { cursor:not-allowed; border-style:dashed; }
       .method[aria-pressed="true"] { border-color:var(--green); background:var(--green-soft); color:var(--green-dark); box-shadow:inset 0 0 0 1px rgba(44,122,98,.06); }
       .method.ai[aria-pressed="true"] { border-color:var(--purple); background:var(--purple-soft); color:#51466e; }
       .body { padding:17px 15px 15px; }
@@ -281,6 +283,13 @@ if (!state.__gotitContentLoaded) {
     aiButton.setAttribute('title', contentT('content.ai'));
     aiButton.innerHTML =
       `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.45 4.05L17.5 8.5l-4.05 1.45L12 14l-1.45-4.05L6.5 8.5l4.05-1.45L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z" fill="currentColor"/></svg><span>${contentT('content.translateAi')}</span>`;
+    if (!aiTranslationAvailable) {
+      aiButton.disabled = true;
+      aiButton.classList.add('paid-locked');
+      aiButton.setAttribute('aria-label', contentT('content.aiPaidOnly'));
+      aiButton.setAttribute('title', contentT('content.aiPaidOnly'));
+      aiButton.querySelector('span')!.textContent = contentT('content.aiPaidOnlyButton');
+    }
     methodSwitch.append(dictionaryButton, aiButton);
 
     const body = document.createElement('div');
@@ -656,7 +665,7 @@ if (!state.__gotitContentLoaded) {
         if (requestFinished || host !== currentHost || version !== requestVersion) return;
         requestFinished = true;
         dictionaryButton.disabled = false;
-        aiButton.disabled = false;
+        aiButton.disabled = !aiTranslationAvailable;
         renderFailure(
           expectedMethod === 'ai'
             ? contentT('content.aiTimeout')
@@ -674,7 +683,7 @@ if (!state.__gotitContentLoaded) {
           requestFinished = true;
           window.clearTimeout(requestTimeout);
           dictionaryButton.disabled = false;
-          aiButton.disabled = false;
+          aiButton.disabled = !aiTranslationAvailable;
           if (!response.ok) {
             renderFailure(statusMessage(response.error), response.error.code.includes('AUTH'));
             return;
@@ -686,7 +695,7 @@ if (!state.__gotitContentLoaded) {
           requestFinished = true;
           window.clearTimeout(requestTimeout);
           dictionaryButton.disabled = false;
-          aiButton.disabled = false;
+          aiButton.disabled = !aiTranslationAvailable;
           renderFailure(contentT('content.unreachable'));
         });
     }
@@ -695,6 +704,7 @@ if (!state.__gotitContentLoaded) {
       loadInlinePreview('dictionary');
     });
     aiButton.addEventListener('click', () => {
+      if (!aiTranslationAvailable) return;
       loadInlinePreview('ai');
     });
     panel.addEventListener('pointerenter', () => {
@@ -756,12 +766,14 @@ if (!state.__gotitContentLoaded) {
         response: ResponseEnvelope<{
           floatingAction: boolean;
           translationMethod: 'dictionary' | 'ai';
+          aiTranslationAvailable: boolean;
           uiLocale: 'en' | 'he';
           theme: 'light' | 'dark';
         }>
       ) => {
         if (!response.ok || !response.data.floatingAction) return;
         setContentLocale(response.data.uiLocale);
+        aiTranslationAvailable = response.data.aiTranslationAvailable;
         preferredTranslationMethod = response.data.translationMethod;
         preferredTheme = response.data.theme;
         document.addEventListener('mouseup', handleSelection, true);
