@@ -1,0 +1,6 @@
+{
+  "extensionName": { "message": "GotIt — Learn words in context" },
+  "extensionNameDev": { "message": "GotIt (Development)" },
+  "extensionDescription": { "message": "Save words and phrases with their sentence, source page and translation, then learn them in GotIt." },
+  "actionTitle": { "message": "Save to GotIt" }
+}

@@ -7,7 +7,23 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
 const manifest = JSON.parse(await readFile(path.join(dist, 'manifest.json'), 'utf8'));
 
+function leafKeys(value, prefix = '') {
+  if (!value || typeof value !== 'object') return [prefix];
+  return Object.entries(value).flatMap(([key, child]) =>
+    leafKeys(child, prefix ? `${prefix}.${key}` : key));
+}
+
 assert.equal(manifest.manifest_version, 3);
+assert.equal(manifest.default_locale, 'en');
+assert.match(manifest.name, /^__MSG_/u);
+const [uiEn, uiHe, chromeEn, chromeHe] = await Promise.all([
+  readFile(path.join(root, 'src/locales/en.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(root, 'src/locales/he.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(dist, '_locales/en/messages.json'), 'utf8').then(JSON.parse),
+  readFile(path.join(dist, '_locales/he/messages.json'), 'utf8').then(JSON.parse)
+]);
+assert.deepEqual(leafKeys(uiEn).sort(), leafKeys(uiHe).sort());
+assert.deepEqual(Object.keys(chromeEn).sort(), Object.keys(chromeHe).sort());
 assert.deepEqual(manifest.permissions.sort(), ['activeTab', 'contextMenus', 'identity', 'scripting', 'storage'].sort());
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.optional_host_permissions, undefined);

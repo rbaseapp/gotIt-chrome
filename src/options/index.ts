@@ -1,6 +1,15 @@
 import { sendRequest, type ExtensionRequest, type ResponseMap } from '../shared/messages';
 import type { ClientError, TranslationMethod } from '../shared/types';
 import { populateLanguageSelect } from '../shared/languages';
+import {
+  getUiLocalePreference,
+  initializeI18n,
+  setUiLocalePreference,
+  t,
+  type UiLocalePreference
+} from '../shared/i18n';
+
+await initializeI18n();
 
 function element<T extends HTMLElement>(id: string): T {
   const result = document.getElementById(id);
@@ -13,6 +22,7 @@ const sourceLanguage = element<HTMLSelectElement>('source-language');
 const targetLanguage = element<HTMLSelectElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
 const floating = element<HTMLInputElement>('floating-action');
+const uiLanguage = element<HTMLSelectElement>('ui-language');
 const status = element<HTMLElement>('status');
 let statusTimer: number | null = null;
 
@@ -26,10 +36,10 @@ async function request<K extends keyof ResponseMap>(
 
 function message(error: unknown): string {
   const code = typeof error === 'object' && error !== null ? (error as ClientError).code : '';
-  if (code === 'OFFLINE') return 'אין חיבור לרשת.';
-  if (code === 'AUTHENTICATION_REQUIRED' || code === 'UNAUTHORIZED') return 'יש להתחבר מחדש דרך חלונית התוסף.';
-  if (code === 'VALIDATION_ERROR') return 'השפה שהוזנה אינה תקינה.';
-  return 'לא הצלחנו לשמור את ההגדרה.';
+  if (code === 'OFFLINE') return t('errors.offline');
+  if (code === 'AUTHENTICATION_REQUIRED' || code === 'UNAUTHORIZED') return t('errors.auth');
+  if (code === 'VALIDATION_ERROR') return t('errors.validation');
+  return t('errors.save');
 }
 
 function notify(text: string, error = false): void {
@@ -46,6 +56,7 @@ function validLanguage(value: string): string | null {
 
 async function initialize(): Promise<void> {
   try {
+    uiLanguage.value = await getUiLocalePreference();
     const data = await request({ type: 'GET_BOOTSTRAP' });
     floating.checked = data.settings.floatingAction;
     if (!data.session) {
@@ -67,7 +78,7 @@ profileForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const source = sourceLanguage.value ? validLanguage(sourceLanguage.value) : null;
   const language = validLanguage(targetLanguage.value);
-  if (!language) { notify('יש להזין קוד שפה תקין, למשל he או en.', true); return; }
+  if (!language) { notify(t('options.invalidLanguage'), true); return; }
   const button = element<HTMLButtonElement>('save-profile');
   button.disabled = true;
   void request({
@@ -77,7 +88,7 @@ profileForm.addEventListener('submit', (event) => {
       defaultTranslationLanguage: language,
       translationMethodPreference: method.value as TranslationMethod
     }
-  }).then(() => notify('העדפות התרגום נשמרו.'))
+  }).then(() => notify(t('options.saved')))
     .catch((error: unknown) => notify(message(error), true))
     .finally(() => { button.disabled = false; });
 });
@@ -90,9 +101,17 @@ floating.addEventListener('change', () => {
   floating.disabled = true;
   void (async () => {
     await request({ type: 'UPDATE_SETTINGS', settings: { floatingAction: desired } });
-    notify(desired ? 'הכפתור הצף והתרגום בלחיצה כפולה הופעלו.' : 'הכפתור הצף והתרגום בלחיצה כפולה כובו.');
+    notify(desired ? t('options.enabled') : t('options.disabled'));
   })().catch((error: unknown) => { floating.checked = !desired; notify(message(error), true); })
     .finally(() => { floating.disabled = false; });
+});
+
+uiLanguage.addEventListener('change', () => {
+  uiLanguage.disabled = true;
+  void setUiLocalePreference(uiLanguage.value as UiLocalePreference)
+    .then(() => window.location.reload())
+    .catch((error: unknown) => notify(message(error), true))
+    .finally(() => { uiLanguage.disabled = false; });
 });
 
 void initialize();

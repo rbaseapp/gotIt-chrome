@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,83 +11,83 @@
       <header class="app-header">
         <div class="brand">
           <img src="icons/icon48.png" alt="" width="36" height="36">
-          <div><strong>GotIt</strong><span>לומדים מתוך ההקשר</span></div>
+          <div><strong>GotIt</strong><span data-i18n="popup.tagline">Learn from context</span></div>
         </div>
-        <button id="settings-button" class="icon-button" type="button" aria-label="פתיחת הגדרות" title="הגדרות">
+        <button id="settings-button" class="icon-button" type="button" aria-label="Open settings" title="Open settings" data-i18n-aria-label="popup.openSettings" data-i18n-title="popup.openSettings">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.55-1.03H3v-4h.08A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1-1.55V3h4v.08A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.55 1H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </header>
 
       <section id="loading-view" class="center-view" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
-        <p>טוען…</p>
+        <p data-i18n="common.loading">Loading…</p>
       </section>
 
       <section id="auth-view" hidden>
         <div class="intro">
-          <h1>המילים שפוגשים בדרך,<br>נשארות איתך.</h1>
-          <p>שמור מילה יחד עם המשפט, האתר והתרגום שלה — ורכז הכול ב־GotIt.</p>
+          <h1 data-i18n="popup.introTitle">Words you meet along the way, stay with you.</h1>
+          <p data-i18n="popup.introDescription">Save a word with its sentence, source site and translation — and keep everything in GotIt.</p>
         </div>
-        <div class="auth-tabs" role="tablist" aria-label="כניסה או הרשמה">
-          <button id="login-tab" class="active" type="button" role="tab" aria-selected="true">כניסה</button>
-          <button id="register-tab" type="button" role="tab" aria-selected="false">הרשמה</button>
+        <div class="auth-tabs" role="tablist" aria-label="Sign in or register" data-i18n-aria-label="popup.authTabs">
+          <button id="login-tab" class="active" type="button" role="tab" aria-selected="true" data-i18n="popup.login">Sign in</button>
+          <button id="register-tab" type="button" role="tab" aria-selected="false" data-i18n="popup.register">Register</button>
         </div>
         <form id="auth-form" novalidate>
-          <label>אימייל<input id="email" type="email" autocomplete="email" dir="ltr" required></label>
-          <label>סיסמה<input id="password" type="password" autocomplete="current-password" minlength="12" required></label>
-          <button id="email-submit" class="primary full" type="submit">כניסה</button>
+          <label><span data-i18n="popup.email">Email</span><input id="email" type="email" autocomplete="email" dir="ltr" required></label>
+          <label><span data-i18n="popup.password">Password</span><input id="password" type="password" autocomplete="current-password" minlength="12" required></label>
+          <button id="email-submit" class="primary full" type="submit" data-i18n="popup.login">Sign in</button>
         </form>
-        <div class="separator"><span>או</span></div>
+        <div class="separator"><span data-i18n="popup.or">or</span></div>
         <button id="google-button" class="google full" type="button">
-          <span aria-hidden="true" class="google-mark">G</span> המשך עם Google
+          <span aria-hidden="true" class="google-mark">G</span> <span data-i18n="popup.continueGoogle">Continue with Google</span>
         </button>
-        <p class="privacy-note">התוסף שומר תוכן רק כשמבקשים ממנו. מפתחות שירותי התרגום לעולם אינם נשמרים בדפדפן.</p>
+        <p class="privacy-note" data-i18n="popup.privacyNote">The extension saves content only when you ask it to.</p>
       </section>
 
       <section id="capture-view" hidden>
         <div class="account-row">
           <span id="account-email" dir="ltr"></span>
-          <button id="logout-button" class="text-button" type="button">יציאה</button>
+          <button id="logout-button" class="text-button" type="button" data-i18n="popup.logout">Log out</button>
         </div>
 
         <div id="capture-editor">
           <section class="source-card">
             <div class="field-heading">
-              <span>מילה או ביטוי</span>
-              <button id="edit-source" class="mini-edit" type="button">סיום עריכה</button>
+              <span data-i18n="popup.sourceText">Word or phrase</span>
+              <button id="edit-source" class="mini-edit" type="button" data-i18n="popup.finishEditing">Finish editing</button>
             </div>
             <div id="source-display" class="source-display" dir="auto" hidden></div>
             <label id="source-editor" class="source-editor">
-              <textarea id="source-text" rows="2" maxlength="500" dir="auto" placeholder="סמן טקסט בעמוד או הקלד כאן"></textarea>
+              <textarea id="source-text" rows="2" maxlength="500" dir="auto" placeholder="Select text on a page or type here" data-i18n-placeholder="popup.sourcePlaceholder"></textarea>
             </label>
             <div id="lexical-editor" class="lexical-editor" hidden>
-              <label>סוג המילה
-                <select id="item-type" aria-label="סוג הפריט">
-                  <option value="word">מילה</option><option value="phrase">ביטוי</option>
-                  <option value="expression">ניב</option><option value="phrasal_verb">Phrasal verb</option>
-                  <option value="other">אחר</option>
+              <label><span data-i18n="popup.itemType">Item type</span>
+                <select id="item-type" aria-label="Item type" data-i18n-aria-label="popup.itemType">
+                  <option value="word" data-i18n="popup.word">Word</option><option value="phrase" data-i18n="popup.phrase">Phrase</option>
+                  <option value="expression" data-i18n="popup.expression">Expression</option><option value="phrasal_verb" data-i18n="popup.phrasalVerb">Phrasal verb</option>
+                  <option value="other" data-i18n="popup.other">Other</option>
                 </select>
               </label>
-              <label>חלק דיבר
-                <input id="part-of-speech" maxlength="100" dir="auto" aria-label="חלק דיבר">
+              <label><span data-i18n="popup.partOfSpeech">Part of speech</span>
+                <input id="part-of-speech" maxlength="100" dir="auto" aria-label="Part of speech" data-i18n-aria-label="popup.partOfSpeech">
               </label>
             </div>
           </section>
           <section id="translation-card" class="translation-card" hidden>
             <div class="field-heading">
-              <span>תרגום</span>
+              <span data-i18n="popup.translation">Translation</span>
               <div class="translation-actions">
-                <button id="save-button" class="icon-action save-header-button" type="submit" form="preview-form" aria-label="שמירה ב־GotIt" title="שמירה ב־GotIt">
+                <button id="save-button" class="icon-action save-header-button" type="submit" form="preview-form" aria-label="Save to GotIt" title="Save to GotIt" data-i18n-aria-label="popup.saveGotIt" data-i18n-title="popup.saveGotIt">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
                 </button>
-                <button id="ai-translation" class="icon-action text-action ai-translation" type="button" aria-label="תרגם עם AI" title="תרגם עם AI" aria-pressed="false">
+                <button id="ai-translation" class="icon-action text-action ai-translation" type="button" aria-label="Translate with AI" title="Translate with AI" aria-pressed="false" data-i18n-aria-label="popup.translateAi" data-i18n-title="popup.translateAi">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.45 4.05L17.5 8.5l-4.05 1.45L12 14l-1.45-4.05L6.5 8.5l4.05-1.45L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z" fill="currentColor"/></svg>
-                  <span>תרגם עם AI</span>
+                  <span data-i18n="popup.translateAi">Translate with AI</span>
                 </button>
-                <button id="edit-translation" class="icon-action text-action toggle-icon" type="button" aria-label="עריכת התרגום" title="עריכת התרגום" aria-pressed="false">
+                <button id="edit-translation" class="icon-action text-action toggle-icon" type="button" aria-label="Edit translation" title="Edit translation" aria-pressed="false" data-i18n-aria-label="popup.editTranslation" data-i18n-title="popup.editTranslation">
                   <svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
                   <svg class="done-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span class="action-label">ערוך</span>
+                  <span class="action-label" data-i18n="popup.edit">Edit</span>
                 </button>
               </div>
             </div>
@@ -98,44 +98,44 @@
               </label>
             </div>
             <fieldset id="candidate-fieldset" class="candidate-list" hidden>
-              <legend>בחירת פירוש</legend>
+              <legend data-i18n="popup.chooseMeaning">Choose a meaning</legend>
               <div id="candidates"></div>
             </fieldset>
             <div id="candidate-explanation" class="candidate-explanation" hidden>
-              <span>הסבר קצר</span>
+              <span data-i18n="popup.explanation">Short explanation</span>
               <p id="explanation-text" dir="auto"></p>
             </div>
             <div id="phonetic-row" class="phonetic-row" hidden>
               <span id="phonetic-text" dir="auto"></span>
-              <button id="speak-button" type="button" class="icon-action" aria-label="השמעת המילה" title="השמעת המילה">
+              <button id="speak-button" type="button" class="icon-action" aria-label="Play pronunciation" title="Play pronunciation" data-i18n-aria-label="popup.speak" data-i18n-title="popup.speak">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3.2l4.3 3.5v-11L7.2 10H4Z" fill="currentColor"/><path d="M15 9.2a4 4 0 0 1 0 5.6M17.7 6.7a7.5 7.5 0 0 1 0 10.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
               </button>
             </div>
           </section>
           <div class="button-row">
-            <button id="read-selection" class="secondary capture-action" type="button" title="טוען את הסימון הנוכחי מהאתר ומתרגם אותו">
+            <button id="read-selection" class="secondary capture-action" type="button" title="Loads the current selection from the website and translates it" data-i18n-title="popup.loadSelectionTitle">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H5a1 1 0 0 0-1 1v3M16 4h3a1 1 0 0 1 1 1v3M8 20H5a1 1 0 0 1-1-1v-3M16 20h3a1 1 0 0 0 1-1v-3M7 12h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-              <span>טען ותרגם סימון</span>
+              <span data-i18n="popup.loadSelection">Load and translate selection</span>
             </button>
-            <button id="preview-button" class="primary capture-action" type="button" title="מתרגם עם Google את המילה או הביטוי שמופיעים בשדה למעלה">
+            <button id="preview-button" class="primary capture-action" type="button" title="Translates the word or phrase above with Google" data-i18n-title="popup.translateGoogleTitle">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2c0 4-2 7-5 9M6 10c1.5 2 3.4 3.5 5.8 4.4M14 10l4 10M12.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>תרגם עם Google</span>
+              <span data-i18n="popup.translateGoogle">Translate with Google</span>
             </button>
           </div>
           <article id="context-card" class="context-card" hidden>
-            <div class="eyebrow">ההקשר שיישמר</div>
-            <textarea id="sentence-text" rows="3" maxlength="4000" dir="auto" aria-label="משפט ההקשר"></textarea>
+            <div class="eyebrow" data-i18n="popup.savedContext">Context to be saved</div>
+            <textarea id="sentence-text" rows="3" maxlength="4000" dir="auto" aria-label="Context sentence" data-i18n-aria-label="popup.contextSentence"></textarea>
             <div id="page-meta" class="page-meta" dir="auto"></div>
           </article>
         </div>
 
         <form id="preview-form" hidden>
           <details class="capture-settings">
-            <summary>שפות והגדרות</summary>
+            <summary data-i18n="popup.languagesSettings">Languages and settings</summary>
             <div class="language-grid">
-              <label>שפת מקור<select id="source-language"></select></label>
+              <label><span data-i18n="popup.sourceLanguage">Source language</span><select id="source-language"></select></label>
               <span aria-hidden="true">←</span>
-              <label>שפת תרגום<select id="target-language" required></select></label>
+              <label><span data-i18n="popup.targetLanguage">Translation language</span><select id="target-language" required></select></label>
             </div>
           </details>
 
@@ -147,20 +147,20 @@
 
           <div id="preview-warning" class="notice" hidden></div>
           <fieldset id="sense-fieldset" class="sense-list" hidden>
-            <legend>כבר שמרת את הכתיב הזה — לאיזו משמעות לשייך?</legend>
+            <legend data-i18n="popup.existingMeaning">You already saved this spelling — which meaning should it use?</legend>
             <div id="senses"></div>
-            <label class="sense-option new-sense"><input type="radio" name="sense" value="new"><span><strong>משמעות חדשה</strong><small>צור פריט לימוד נוסף</small></span></label>
+            <label class="sense-option new-sense"><input type="radio" name="sense" value="new"><span><strong data-i18n="popup.newMeaning">New meaning</strong><small data-i18n="popup.newMeaningHelp">Create another learning item</small></span></label>
           </fieldset>
 
         </form>
 
         <section id="success-view" class="success-view" hidden aria-live="polite">
           <div class="success-icon" aria-hidden="true">✓</div>
-          <h2 id="success-title">נשמר ב־GotIt</h2>
+          <h2 id="success-title" data-i18n="popup.savedTitle">Saved to GotIt</h2>
           <p id="success-details"></p>
           <div class="success-actions">
-            <button id="remove-saved" class="danger-secondary" type="button">הסר מהשמורים</button>
-            <button id="save-another" class="secondary" type="button">שמירת מילה נוספת</button>
+            <button id="remove-saved" class="danger-secondary" type="button" data-i18n="popup.removeSaved">Remove from saved</button>
+            <button id="save-another" class="secondary" type="button" data-i18n="popup.saveAnother">Save another word</button>
           </div>
         </section>
       </section>

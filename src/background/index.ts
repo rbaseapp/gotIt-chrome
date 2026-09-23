@@ -18,6 +18,7 @@ import {
 } from './auth';
 import { getSettings, syncFloatingContentScript, updateSettings } from './settings';
 import { effectiveTranslationMethod } from '../shared/translation';
+import { getResolvedUiLocale } from '../shared/ui-locale';
 
 const PENDING_KEY = 'gotit.pending-capture.v1';
 const INLINE_PREFIX = 'gotit.inline-capture.v1.';
@@ -212,11 +213,16 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
   }
   if (request.type === 'GET_CONTENT_CONFIG') {
     if (!contentPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);
-    const [settings, session] = await Promise.all([getSettings(), getPublicSession()]);
+    const [settings, session, uiLocale] = await Promise.all([
+      getSettings(),
+      getPublicSession(),
+      getResolvedUiLocale()
+    ]);
     const profile = session ? await getProfile().catch(() => null) : null;
     return {
       floatingAction: settings.floatingAction,
-      translationMethod: effectiveTranslationMethod(profile?.translationMethodPreference)
+      translationMethod: effectiveTranslationMethod(profile?.translationMethodPreference),
+      uiLocale
     };
   }
   if (!extensionPage) throw new RequestError('INVALID_MESSAGE_SOURCE', 'Invalid message source', 400);

@@ -24,5 +24,8 @@
     "sharp": "^0.35.4",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "i18next": "^26.4.2"
   }
 }

@@ -43,7 +43,7 @@ input:focus, textarea:focus, select:focus { border-color: #7c8cff; box-shadow: 0
 .separator { display: flex; align-items: center; gap: 10px; color: #747e94; font-size: 11px; margin: 14px 0; }
 .separator::before, .separator::after { content: ""; height: 1px; background: #30384e; flex: 1; }
 .google { border: 1px solid #343d55; background: #202638; color: #eef0f6; }
-.google-mark { color: #4285f4; font-size: 17px; margin-left: 7px; }
+.google-mark { color: #4285f4; font-size: 17px; margin-inline-end: 7px; }
 .privacy-note { color: #7f899f; font-size: 10.5px; line-height: 1.45; text-align: center; margin: 14px 8px 0; }
 #capture-view { padding: 0 18px 20px; }
 .account-row { margin: 0 -18px 16px; padding: 8px 18px; background: #141927; border-bottom: 1px solid #2b3348; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #8e98ad; }
@@ -112,7 +112,7 @@ legend { color: #b7bed0; font-size: 11px; font-weight: 750; margin-bottom: 7px; 
 .new-sense { border-top: 1px solid #30384e; margin-top: 4px; padding-top: 10px; }
 .notice { border: 1px solid #4c4326; border-radius: 9px; padding: 9px 10px; background: #2c291e; color: #e8d89f; font-size: 11.5px; line-height: 1.4; }
 .phonetic-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; border-top: 1px solid #343d55; padding-top: 6px; color: #a4adc0; }
-.success-view { margin-top: 12px; padding: 11px 12px; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; border: 1px solid #2d5b48; border-radius: 12px; background: #172a23; text-align: right; }
+.success-view { margin-top: 12px; padding: 11px 12px; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; border: 1px solid #2d5b48; border-radius: 12px; background: #172a23; text-align: start; }
 .success-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: #214536; color: #8be1b0; font-size: 19px; font-weight: 800; }
 .success-view h2 { margin: 0; font-size: 14px; }
 .success-view p { grid-column: 2; color: #a9c2b6; line-height: 1.4; margin: -7px 0 0; font-size: 11px; }

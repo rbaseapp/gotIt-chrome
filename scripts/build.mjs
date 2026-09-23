@@ -54,20 +54,22 @@ await Promise.all([
   cp(path.join(root, 'src/popup/index.html'), path.join(dist, 'popup.html')),
   cp(path.join(root, 'src/popup/styles.css'), path.join(dist, 'popup.css')),
   cp(path.join(root, 'src/options/index.html'), path.join(dist, 'options.html')),
-  cp(path.join(root, 'src/options/styles.css'), path.join(dist, 'options.css'))
+  cp(path.join(root, 'src/options/styles.css'), path.join(dist, 'options.css')),
+  cp(path.join(root, 'src/_locales'), path.join(dist, '_locales'), { recursive: true })
 ]);
 
 const manifest = {
   manifest_version: 3,
-  name: mode === 'development' ? 'GotIt (Development)' : 'GotIt — Learn words in context',
+  default_locale: 'en',
+  name: mode === 'development' ? '__MSG_extensionNameDev__' : '__MSG_extensionName__',
   short_name: 'GotIt',
   version: packageMetadata.version,
-  description: 'Save words and phrases with their sentence, source page and translation, then learn them in GotIt.',
+  description: '__MSG_extensionDescription__',
   minimum_chrome_version: '127',
   icons: { 16: 'icons/icon16.png', 32: 'icons/icon32.png', 48: 'icons/icon48.png', 128: 'icons/icon128.png' },
   action: {
     default_popup: 'popup.html',
-    default_title: 'Save to GotIt',
+    default_title: '__MSG_actionTitle__',
     default_icon: { 16: 'icons/icon16.png', 32: 'icons/icon32.png', 48: 'icons/icon48.png' }
   },
   options_page: 'options.html',

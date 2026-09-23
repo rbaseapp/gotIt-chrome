@@ -24,7 +24,7 @@ input[role="switch"] { appearance: none; width: 44px; height: 24px; border-radiu
 input[role="switch"]::after { content: ""; display: block; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: .18s ease; }
 input[role="switch"]:checked { background: #5142db; }
 input[role="switch"]:checked::after { transform: translateX(-20px); }
-.privacy ul { color: #686476; line-height: 1.7; font-size: 13px; margin: 8px 0 0; padding-right: 20px; }
+.privacy ul { color: #686476; line-height: 1.7; font-size: 13px; margin: 8px 0 0; padding-inline-start: 20px; }
 .notice { background: #fff8df; color: #725d13; border-radius: 9px; padding: 10px 12px; font-size: 12px; margin-bottom: 14px; }
 #status { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 80px); opacity: 0; transition: .2s ease; background: #2e2a41; color: #fff; border-radius: 10px; padding: 10px 16px; box-shadow: 0 8px 25px rgba(20,17,44,.25); }
 #status.visible { transform: translate(-50%, 0); opacity: 1; }

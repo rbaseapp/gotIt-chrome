@@ -1,6 +1,7 @@
 import { selectionContext } from '../shared/context';
 import { findMatchingSavedSense } from '../shared/saved-match';
 import { INLINE_TRANSLATION_TIMEOUT_MS } from '../shared/translation';
+import { contentDirection, contentT, setContentLocale } from '../shared/content-i18n';
 import type {
   CaptureContext,
   CaptureResult,
@@ -76,7 +77,7 @@ if (!state.__gotitContentLoaded) {
     `;
     const button = document.createElement('button');
     button.type = 'button';
-    button.setAttribute('aria-label', 'Save selection to GotIt');
+    button.setAttribute('aria-label', contentT('content.saveSelection'));
     appendLogo(button);
     const position = place(rect, 92, 40);
     button.style.left = `${position.left}px`;
@@ -93,9 +94,9 @@ if (!state.__gotitContentLoaded) {
 
   function statusMessage(error: ClientError): string {
     if (error.code === 'AUTHENTICATION_REQUIRED' || error.code === 'UNAUTHORIZED')
-      return 'יש להתחבר ל־GotIt כדי לתרגם.';
-    if (error.code === 'OFFLINE' || error.code === 'NETWORK_ERROR') return 'אין כרגע חיבור לשירות התרגום.';
-    return 'לא הצלחנו לתרגם כרגע.';
+      return contentT('content.authRequired');
+    if (error.code === 'OFFLINE' || error.code === 'NETWORK_ERROR') return contentT('content.offline');
+    return contentT('content.translateFailed');
   }
 
   function reviewActions(context: CaptureContext, signIn = false): HTMLElement {
@@ -104,17 +105,17 @@ if (!state.__gotitContentLoaded) {
     const review = document.createElement('button');
     review.type = 'button';
     review.className = 'round-action labeled-action primary-action';
-    review.setAttribute('aria-label', signIn ? 'פתיחת GotIt והתחברות' : 'פתיחה לבדיקה ועריכה');
-    review.setAttribute('title', signIn ? 'פתיחת GotIt והתחברות' : 'פתיחה לבדיקה ועריכה');
+    review.setAttribute('aria-label', signIn ? contentT('content.openSignIn') : contentT('content.openReview'));
+    review.setAttribute('title', signIn ? contentT('content.openSignIn') : contentT('content.openReview'));
     review.innerHTML = signIn
-      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M13 8l4 4-4 4M8 12h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><span>התחבר</span>'
-      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>ערוך</span>';
+      ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M13 8l4 4-4 4M8 12h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg><span>${contentT('content.signIn')}</span>`
+      : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>${contentT('content.edit')}</span>`;
     review.addEventListener('click', () => sendCapture(context));
     const dismiss = document.createElement('button');
     dismiss.type = 'button';
     dismiss.className = 'round-action';
-    dismiss.setAttribute('aria-label', 'סגירה');
-    dismiss.setAttribute('title', 'סגירה');
+    dismiss.setAttribute('aria-label', contentT('content.close'));
+    dismiss.setAttribute('title', contentT('content.close'));
     dismiss.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
     dismiss.addEventListener('click', hide);
@@ -135,7 +136,7 @@ if (!state.__gotitContentLoaded) {
         --surface:#171c2b; --surface-raised:#202638; --surface-soft:#1b2131; --line:#313950;
         --text:#f7f8fc; --muted:#9aa3b9; --accent:#7c8cff; --accent-strong:#6576f4; --warm:#f5c84b;
         all:initial; box-sizing:border-box; position:fixed; z-index:2147483647;
-        width:min(430px, calc(100vw - 24px)); max-height:calc(100vh - 16px); direction:rtl; overflow:auto;
+        width:min(430px, calc(100vw - 24px)); max-height:calc(100vh - 16px); direction:${contentDirection}; overflow:auto;
         border:1px solid #333b53; border-radius:20px; background:var(--surface); color:var(--text);
         box-shadow:0 24px 70px rgba(3,6,15,.48), 0 2px 12px rgba(3,6,15,.3);
         font:14px/1.5 ${font}; color-scheme:dark;
@@ -161,7 +162,7 @@ if (!state.__gotitContentLoaded) {
       .method.ai[aria-pressed="true"] { border-color:#7c8cff; background:linear-gradient(135deg, #303955, #292f48); }
       .body { padding:17px 15px 15px; }
       .translation-row { display:flex; align-items:center; justify-content:space-between; gap:14px; min-height:61px; }
-      .translation-copy { flex:1 1 auto; min-width:0; text-align:right; }
+      .translation-copy { flex:1 1 auto; min-width:0; text-align:start; }
       .translation-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:7px; direction:ltr; }
       .translation { color:var(--text); font-size:27px; line-height:1.25; font-weight:800; letter-spacing:-.35px; overflow-wrap:anywhere; }
       .lexical { min-height:18px; margin-top:4px; color:#aeb6c9; font-size:11.5px; }
@@ -187,12 +188,12 @@ if (!state.__gotitContentLoaded) {
       .meaning-list { display:grid; gap:7px; margin-top:12px; padding:11px; border:1px solid #343d55; border-radius:12px; background:#141927; }
       .meaning-title { color:#aeb6c9; font-size:11px; font-weight:800; }
       .meaning-options { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:7px; }
-      .meaning-option { display:grid; gap:2px; min-width:0; padding:8px 10px; border:1px solid #3b4560; border-radius:10px; background:#202638; color:#eef1f8; cursor:pointer; text-align:right; }
+      .meaning-option { display:grid; gap:2px; min-width:0; padding:8px 10px; border:1px solid #3b4560; border-radius:10px; background:#202638; color:#eef1f8; cursor:pointer; text-align:start; }
       .meaning-option:hover { border-color:#64708f; background:#293149; }
       .meaning-option[aria-pressed="true"] { border-color:#7c8cff; background:#303955; box-shadow:inset 0 0 0 1px rgba(124,140,255,.15); }
       .meaning-option strong { overflow-wrap:anywhere; font-size:13px; }
       .meaning-option small { color:#9da6ba; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .meta { margin-top:11px; color:#7f899f; font-size:11px; direction:ltr; text-align:right; }
+      .meta { margin-top:11px; color:#7f899f; font-size:11px; direction:ltr; text-align:start; }
       .loading-state { min-height:169px; display:grid; place-content:center; justify-items:center; gap:10px; color:#a3acc0; text-align:center; }
       .spinner { width:25px; height:25px; border:2px solid #333b54; border-top-color:#8795ff; border-radius:50%; animation:spin .7s linear infinite; }
       @keyframes spin { to { transform:rotate(360deg); } }
@@ -214,7 +215,7 @@ if (!state.__gotitContentLoaded) {
     const panel = document.createElement('section');
     panel.className = 'panel';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', `תרגום המילה ${context.selectedText}`);
+    panel.setAttribute('aria-label', contentT('content.dialogLabel', { term: context.selectedText }));
     const position = place(rect, Math.min(430, window.innerWidth - 24), 390);
     panel.style.left = `${position.left}px`;
     panel.style.top = `${position.top}px`;
@@ -227,7 +228,7 @@ if (!state.__gotitContentLoaded) {
     close.className = 'close';
     close.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-    close.setAttribute('aria-label', 'סגירה');
+    close.setAttribute('aria-label', contentT('content.close'));
     close.addEventListener('click', hide);
     const term = document.createElement('div');
     term.className = 'term';
@@ -242,21 +243,21 @@ if (!state.__gotitContentLoaded) {
     const methodSwitch = document.createElement('div');
     methodSwitch.className = 'method-switch';
     methodSwitch.setAttribute('role', 'group');
-    methodSwitch.setAttribute('aria-label', 'בחירת שיטת תרגום');
+    methodSwitch.setAttribute('aria-label', contentT('content.methodGroup'));
     const dictionaryButton = document.createElement('button');
     dictionaryButton.type = 'button';
     dictionaryButton.className = 'method google';
-    dictionaryButton.setAttribute('aria-label', 'תרגום מילוני');
-    dictionaryButton.setAttribute('title', 'תרגום מילוני');
+    dictionaryButton.setAttribute('aria-label', contentT('content.dictionary'));
+    dictionaryButton.setAttribute('title', contentT('content.dictionary'));
     dictionaryButton.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2c0 4-2 7-5 9M6 10c1.5 2 3.4 3.5 5.8 4.4M14 10l4 10M12.5 16h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Google</span>';
     const aiButton = document.createElement('button');
     aiButton.type = 'button';
     aiButton.className = 'method ai';
-    aiButton.setAttribute('aria-label', 'תרגום באמצעות AI');
-    aiButton.setAttribute('title', 'תרגום באמצעות AI');
+    aiButton.setAttribute('aria-label', contentT('content.ai'));
+    aiButton.setAttribute('title', contentT('content.ai'));
     aiButton.innerHTML =
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.45 4.05L17.5 8.5l-4.05 1.45L12 14l-1.45-4.05L6.5 8.5l4.05-1.45L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z" fill="currentColor"/></svg><span>תרגם עם AI</span>';
+      `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.45 4.05L17.5 8.5l-4.05 1.45L12 14l-1.45-4.05L6.5 8.5l4.05-1.45L12 3Zm6 10 .9 2.1L21 16l-2.1.9L18 19l-.9-2.1L15 16l2.1-.9L18 13Z" fill="currentColor"/></svg><span>${contentT('content.translateAi')}</span>`;
     methodSwitch.append(dictionaryButton, aiButton);
 
     const body = document.createElement('div');
@@ -298,9 +299,9 @@ if (!state.__gotitContentLoaded) {
       const spinner = document.createElement('span');
       spinner.className = 'spinner';
       const loading = document.createElement('span');
-      loading.textContent = method === 'ai' ? 'AI מתרגם ומנסח הסבר קצר…' : 'מתרגם את המילה…';
+      loading.textContent = method === 'ai' ? contentT('content.loadingAi') : contentT('content.loadingWord');
       const hint = document.createElement('small');
-      hint.textContent = context.sentenceText ? 'משתמש בהקשר שסביב הסימון' : 'מזהה את שפת המקור';
+      hint.textContent = context.sentenceText ? contentT('content.usingContext') : contentT('content.detectingSource');
       body.replaceChildren(spinner, loading, hint);
     }
 
@@ -316,25 +317,25 @@ if (!state.__gotitContentLoaded) {
     function providerFailureMessage(preview: InlinePreviewResult['preview']): string {
       const codes = new Set(preview.enrichment.warnings?.map((entry) => entry.code) ?? []);
       if (preview.translationMethod === 'ai') {
-        if (codes.has('ENRICHMENT_AUTHENTICATION')) return 'Anthropic דחה את מפתח ה־API שמוגדר בשרת.';
-        if (codes.has('ENRICHMENT_BILLING')) return 'חשבון Anthropic דורש Billing או קרדיט API פעיל.';
-        if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Anthropic אין הרשאה ל־Workspace או למודל.';
-        if (codes.has('ENRICHMENT_WORKSPACE')) return 'ה־Workspace שמוגדר בשרת אינו תואם למפתח Anthropic.';
-        if (codes.has('ENRICHMENT_MODEL_ACCESS')) return 'מודל התרגום שמוגדר בשרת אינו זמין למפתח Anthropic.';
-        if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Anthropic נוצלה כרגע.';
-        if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Anthropic דחה את מבנה בקשת התרגום.';
-        if (codes.has('ENRICHMENT_TIMEOUT')) return 'Anthropic לא השיב בזמן. אפשר ללחוץ שוב ולנסות מחדש.';
-        if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Anthropic החזיר תשובה שלא ניתן לעבד.';
-        return 'הבקשה ל־Anthropic נכשלה לפני שהתקבלה תשובה תקינה.';
+        if (codes.has('ENRICHMENT_AUTHENTICATION')) return contentT('provider.anthropicAuth');
+        if (codes.has('ENRICHMENT_BILLING')) return contentT('provider.anthropicBilling');
+        if (codes.has('ENRICHMENT_PERMISSION')) return contentT('provider.anthropicPermission');
+        if (codes.has('ENRICHMENT_WORKSPACE')) return contentT('provider.anthropicWorkspace');
+        if (codes.has('ENRICHMENT_MODEL_ACCESS')) return contentT('provider.anthropicModel');
+        if (codes.has('ENRICHMENT_RATE_LIMIT')) return contentT('provider.anthropicRate');
+        if (codes.has('ENRICHMENT_INVALID_REQUEST')) return contentT('provider.anthropicRequest');
+        if (codes.has('ENRICHMENT_TIMEOUT')) return contentT('provider.anthropicTimeout');
+        if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return contentT('provider.anthropicResponse');
+        return contentT('provider.anthropicUpstream');
       }
-      if (codes.has('ENRICHMENT_AUTHENTICATION')) return 'Google דחה את מפתח התרגום שמוגדר בשרת.';
-      if (codes.has('ENRICHMENT_BILLING')) return 'שירות Google Translation דורש Billing פעיל.';
-      if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Google אין הרשאה ל־Cloud Translation API.';
-      if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Google Translation נוצלה כרגע.';
-      if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Google דחה את בקשת התרגום או את קודי השפה.';
-      if (codes.has('ENRICHMENT_TIMEOUT')) return 'Google Translation לא השיב בזמן. אפשר ללחוץ שוב ולנסות מחדש.';
-      if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Google החזיר תשובה שלא ניתן לעבד.';
-      return 'שירות Google Translation אינו זמין כרגע. אפשר ללחוץ שוב ולנסות מחדש.';
+      if (codes.has('ENRICHMENT_AUTHENTICATION')) return contentT('provider.googleAuth');
+      if (codes.has('ENRICHMENT_BILLING')) return contentT('provider.googleBilling');
+      if (codes.has('ENRICHMENT_PERMISSION')) return contentT('provider.googlePermission');
+      if (codes.has('ENRICHMENT_RATE_LIMIT')) return contentT('provider.googleRate');
+      if (codes.has('ENRICHMENT_INVALID_REQUEST')) return contentT('provider.googleRequest');
+      if (codes.has('ENRICHMENT_TIMEOUT')) return contentT('provider.googleTimeout');
+      if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return contentT('provider.googleResponse');
+      return contentT('provider.googleUnknown');
     }
 
     function renderPreview(result: InlinePreviewResult, candidateIndex = 0): void {
@@ -348,13 +349,13 @@ if (!state.__gotitContentLoaded) {
         warning.textContent =
           preview.enrichment.status === 'not_configured'
             ? preview.translationMethod === 'ai'
-              ? 'תרגום AI עדיין אינו מוגדר בשרת. אפשר להמשיך לבדיקה ולתרגום ידני.'
-              : 'Google Translate עדיין אינו מוגדר בשרת. אפשר לעבור לתרגום AI או להמשיך לעריכה.'
+              ? contentT('content.aiNotConfigured')
+              : contentT('content.googleNotConfigured')
             : preview.requiresLanguageSelection
-              ? 'יש לבחור שפת יעד בהגדרות GotIt.'
+              ? contentT('content.chooseTarget')
               : preview.translationMethod === 'ai'
-                ? 'שירות ה־AI החזיר תשובה שלא ניתן לעבד. אפשר לנסות שוב בעוד רגע.'
-                : 'שירות התרגום אינו זמין כרגע.';
+                ? contentT('content.aiInvalid')
+                : contentT('content.unavailable');
         if (preview.enrichment.status === 'unavailable') warning.textContent = providerFailureMessage(preview);
         body.replaceChildren(warning, reviewActions(context));
         fitPanel();
@@ -384,8 +385,8 @@ if (!state.__gotitContentLoaded) {
       const speak = document.createElement('button');
       speak.type = 'button';
       speak.className = 'round-action speak';
-      speak.setAttribute('aria-label', `השמעת ${context.selectedText}`);
-      speak.setAttribute('title', 'השמעת המילה');
+      speak.setAttribute('aria-label', contentT('content.speakTerm', { term: context.selectedText }));
+      speak.setAttribute('title', contentT('content.speak'));
       speak.innerHTML =
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3.2l4.3 3.5v-11L7.2 10H4Z" fill="currentColor"/><path d="M15 9.2a4 4 0 010 5.6M17.7 6.7a7.5 7.5 0 010 10.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
       speak.disabled = !('speechSynthesis' in window) || !context.selectedText.trim();
@@ -402,17 +403,17 @@ if (!state.__gotitContentLoaded) {
       const quickSave = document.createElement('button');
       quickSave.type = 'button';
       quickSave.className = 'round-action labeled-action primary-action save-action';
-      quickSave.setAttribute('aria-label', 'שמירה ב־GotIt');
-      quickSave.setAttribute('title', 'שמירה ב־GotIt');
+      quickSave.setAttribute('aria-label', contentT('content.save'));
+      quickSave.setAttribute('title', contentT('content.save'));
       quickSave.innerHTML =
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>שמור</span>';
+        `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5V4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v6h8V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span>${contentT('content.saveShort')}</span>`;
       const review = document.createElement('button');
       review.type = 'button';
       review.className = 'round-action labeled-action';
-      review.setAttribute('aria-label', 'פתיחה לבדיקה ועריכה');
-      review.setAttribute('title', 'פתיחה לבדיקה ועריכה');
+      review.setAttribute('aria-label', contentT('content.openReview'));
+      review.setAttribute('title', contentT('content.openReview'));
       review.innerHTML =
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>ערוך</span>';
+        `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 16.5-.8 3.3 3.3-.8L18 8.5 15.5 6 5 16.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span>${contentT('content.edit')}</span>`;
       review.addEventListener('click', () => sendCapture(context));
       const translationActions = document.createElement('div');
       translationActions.className = 'translation-actions';
@@ -423,7 +424,7 @@ if (!state.__gotitContentLoaded) {
       meaningList.className = 'meaning-list';
       const meaningTitle = document.createElement('div');
       meaningTitle.className = 'meaning-title';
-      meaningTitle.textContent = 'בחר פירוש לשמירה';
+      meaningTitle.textContent = contentT('content.meaningTitle');
       const meaningOptions = document.createElement('div');
       meaningOptions.className = 'meaning-options';
       preview.enrichment.candidates.forEach((meaning, index) => {
@@ -452,7 +453,7 @@ if (!state.__gotitContentLoaded) {
       spark.className = 'spark';
       spark.textContent = preview.translationMethod === 'ai' ? '✦' : '●';
       const labelText = document.createElement('span');
-      labelText.textContent = 'תיאור קצר';
+      labelText.textContent = contentT('content.shortDescription');
       explanationLabel.append(spark, labelText);
       const explanationText = document.createElement('p');
       explanationText.dir = 'auto';
@@ -476,10 +477,10 @@ if (!state.__gotitContentLoaded) {
           details.explanation?.trim() ||
           (preview.translationMethod === 'ai'
             ? details.partOfSpeech
-              ? `חלק הדיבר של המילה הוא ${details.partOfSpeech}.`
-              : 'לא נמצא כרגע תיאור מילוני נוסף.'
-            : 'למשמעות מילונית והסבר מותאם למשפט, לחץ על כפתור תרגום AI.');
-        alternatives.textContent = variants.length ? `גם: ${variants.join(', ')}` : '';
+              ? contentT('content.partOfSpeech', { partOfSpeech: details.partOfSpeech })
+              : contentT('content.noDescription')
+            : contentT('content.aiDescriptionHint'));
+        alternatives.textContent = variants.length ? contentT('content.alternatives', { variants: variants.join(', ') }) : '';
         alternatives.hidden = variants.length === 0;
         fitPanel();
       }
@@ -502,17 +503,17 @@ if (!state.__gotitContentLoaded) {
       if (matchingSavedSense) {
         quickSave.classList.remove('primary-action');
         quickSave.classList.add('remove-action');
-        quickSave.setAttribute('aria-label', 'הסר מהשמורים');
-        quickSave.setAttribute('title', 'הסר מהשמורים');
+        quickSave.setAttribute('aria-label', contentT('content.removeSaved'));
+        quickSave.setAttribute('title', contentT('content.removeSaved'));
         const saveLabel = quickSave.querySelector('span');
-        if (saveLabel) saveLabel.textContent = 'הסר';
+        if (saveLabel) saveLabel.textContent = contentT('content.removeShort');
       }
       quickSave.addEventListener('click', () => {
         quickSave.disabled = true;
         quickSave.classList.add('saving');
         const removing = savedLearningItemId !== null;
-        quickSave.setAttribute('aria-label', removing ? 'מסיר מהשמורים…' : 'שומר ב־GotIt…');
-        quickSave.setAttribute('title', removing ? 'מסיר מהשמורים…' : 'שומר ב־GotIt…');
+        quickSave.setAttribute('aria-label', removing ? contentT('content.removing') : contentT('content.saving'));
+        quickSave.setAttribute('title', removing ? contentT('content.removing') : contentT('content.saving'));
         if (removing) {
           void chrome.runtime
             .sendMessage({ type: 'REMOVE_SAVED_ITEM', learningItemId: savedLearningItemId })
@@ -525,15 +526,15 @@ if (!state.__gotitContentLoaded) {
                 body.prepend(warning);
                 quickSave.disabled = false;
                 quickSave.classList.remove('saving');
-                quickSave.setAttribute('aria-label', 'ניסיון הסרה נוסף');
-                quickSave.setAttribute('title', 'ניסיון הסרה נוסף');
+                quickSave.setAttribute('aria-label', contentT('content.retryRemove'));
+                quickSave.setAttribute('title', contentT('content.retryRemove'));
                 fitPanel();
                 return;
               }
               body.querySelector('.saved')?.remove();
               const confirmation = document.createElement('div');
               confirmation.className = 'saved';
-              confirmation.textContent = 'המילה הוסרה מהשמורים';
+              confirmation.textContent = contentT('content.removed');
               body.prepend(confirmation);
               savedLearningItemId = null;
               quickSave.classList.remove('saving');
@@ -543,8 +544,8 @@ if (!state.__gotitContentLoaded) {
             .catch(() => {
               quickSave.disabled = false;
               quickSave.classList.remove('saving');
-              quickSave.setAttribute('aria-label', 'ניסיון הסרה נוסף');
-              quickSave.setAttribute('title', 'ניסיון הסרה נוסף');
+              quickSave.setAttribute('aria-label', contentT('content.retryRemove'));
+              quickSave.setAttribute('title', contentT('content.retryRemove'));
             });
           return;
         }
@@ -563,39 +564,39 @@ if (!state.__gotitContentLoaded) {
               body.prepend(warning);
               quickSave.disabled = false;
               quickSave.classList.remove('saving');
-              quickSave.setAttribute('aria-label', 'ניסיון שמירה נוסף');
-              quickSave.setAttribute('title', 'ניסיון שמירה נוסף');
+              quickSave.setAttribute('aria-label', contentT('content.retrySave'));
+              quickSave.setAttribute('title', contentT('content.retrySave'));
               fitPanel();
               return;
             }
             body.querySelector('.saved')?.remove();
             const confirmation = document.createElement('div');
             confirmation.className = 'saved';
-            confirmation.textContent = saved.data.outcome === 'merged' ? 'ההקשר נוסף למילה ✓' : 'המילה נשמרה ב־GotIt ✓';
+            confirmation.textContent = saved.data.outcome === 'merged' ? contentT('content.contextAdded') : contentT('content.wordSaved');
             body.prepend(confirmation);
             savedLearningItemId = saved.data.learningItemId;
             quickSave.classList.remove('saving');
             quickSave.classList.remove('primary-action');
             quickSave.classList.add('remove-action');
             quickSave.disabled = false;
-            quickSave.setAttribute('aria-label', 'הסר מהשמורים');
-            quickSave.setAttribute('title', 'הסר מהשמורים');
+            quickSave.setAttribute('aria-label', contentT('content.removeSaved'));
+            quickSave.setAttribute('title', contentT('content.removeSaved'));
             const saveLabel = quickSave.querySelector('span');
-            if (saveLabel) saveLabel.textContent = 'הסר';
+            if (saveLabel) saveLabel.textContent = contentT('content.removeShort');
             fitPanel();
           })
           .catch(() => {
             quickSave.disabled = false;
             quickSave.classList.remove('saving');
-            quickSave.setAttribute('aria-label', 'ניסיון שמירה נוסף');
-            quickSave.setAttribute('title', 'ניסיון שמירה נוסף');
+            quickSave.setAttribute('aria-label', contentT('content.retrySave'));
+            quickSave.setAttribute('title', contentT('content.retrySave'));
           });
       });
       body.replaceChildren(translationRow);
       if (matchingSavedSense) {
         const alreadySaved = document.createElement('div');
         alreadySaved.className = 'saved';
-        alreadySaved.textContent = 'המילה כבר שמורה ב־GotIt ✓';
+        alreadySaved.textContent = contentT('content.alreadySaved');
         body.prepend(alreadySaved);
       }
       if (preview.enrichment.candidates.length > 1) body.append(meaningList);
@@ -617,8 +618,8 @@ if (!state.__gotitContentLoaded) {
         aiButton.disabled = false;
         renderFailure(
           expectedMethod === 'ai'
-            ? 'שירות ה־AI לא הגיב בזמן. אפשר לנסות שוב בעוד רגע.'
-            : 'שירות התרגום לא הגיב בזמן. אפשר לנסות שוב.'
+            ? contentT('content.aiTimeout')
+            : contentT('content.translationTimeout')
         );
       }, INLINE_TRANSLATION_TIMEOUT_MS);
       void chrome.runtime
@@ -645,7 +646,7 @@ if (!state.__gotitContentLoaded) {
           window.clearTimeout(requestTimeout);
           dictionaryButton.disabled = false;
           aiButton.disabled = false;
-          renderFailure('לא הצלחנו להגיע לשירות התרגום.');
+          renderFailure(contentT('content.unreachable'));
         });
     }
 
@@ -702,9 +703,11 @@ if (!state.__gotitContentLoaded) {
         response: ResponseEnvelope<{
           floatingAction: boolean;
           translationMethod: 'dictionary' | 'ai';
+          uiLocale: 'en' | 'he';
         }>
       ) => {
         if (!response.ok || !response.data.floatingAction) return;
+        setContentLocale(response.data.uiLocale);
         preferredTranslationMethod = response.data.translationMethod;
         document.addEventListener('mouseup', handleSelection, true);
         document.addEventListener('dblclick', handleDoubleClick, true);

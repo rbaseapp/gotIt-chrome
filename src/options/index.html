@@ -1,54 +1,66 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>הגדרות GotIt</title>
+    <title data-i18n="options.title">GotIt settings</title>
     <link rel="stylesheet" href="options.css">
   </head>
   <body>
     <main>
       <header>
         <img src="icons/icon128.png" alt="" width="56" height="56">
-        <div><h1>הגדרות GotIt</h1><p>התאמה אישית של שמירת מילים מהדפדפן</p></div>
+        <div><h1 data-i18n="options.title">GotIt settings</h1><p data-i18n="options.subtitle">Customize how words are saved from your browser</p></div>
       </header>
 
       <section class="card">
-        <h2>תרגום</h2>
-        <p class="description">ההעדפות האלה נשמרות בפרופיל GotIt ומשמשות גם במכשירים אחרים.</p>
-        <div id="signed-out-notice" class="notice" hidden>כדי לשנות העדפות תרגום יש להתחבר דרך חלונית התוסף.</div>
+        <h2 data-i18n="options.interfaceTitle">Interface</h2>
+        <p class="description" data-i18n="options.interfaceDescription">Choose the language used by the extension.</p>
+        <label><span data-i18n="options.interfaceLanguage">Interface language</span>
+          <select id="ui-language">
+            <option value="auto" data-i18n="common.automatic">Automatic (browser language)</option>
+            <option value="en" data-i18n="common.english">English</option>
+            <option value="he" data-i18n="common.hebrew">עברית</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="options.translationTitle">Translation</h2>
+        <p class="description" data-i18n="options.translationDescription">These preferences are saved in your GotIt profile and used on your other devices.</p>
+        <div id="signed-out-notice" class="notice" hidden data-i18n="options.signedOut">Sign in through the extension popup to change translation preferences.</div>
         <form id="profile-form">
-          <label>שפת מקור מועדפת
+          <label><span data-i18n="options.sourceLanguage">Preferred source language</span>
             <select id="source-language"></select>
-            <small>בזיהוי אוטומטי Google מזהה את שפת הטקסט; שפת האתר אינה נלקחת בחשבון.</small>
+            <small data-i18n="options.sourceHelp">In automatic mode, Google detects the text language.</small>
           </label>
-          <label>שפת תרגום מועדפת
+          <label><span data-i18n="options.targetLanguage">Preferred translation language</span>
             <select id="target-language"></select>
           </label>
-          <label>שיטת תרגום מועדפת
+          <label><span data-i18n="options.method">Preferred translation method</span>
             <select id="translation-method">
-              <option value="auto">אוטומטי — השרת בוחר</option>
-              <option value="dictionary">מילון / Translation API</option>
-              <option value="ai">AI — תרגום לפי ההקשר</option>
+              <option value="auto" data-i18n="options.methodAuto">Automatic — server decides</option>
+              <option value="dictionary" data-i18n="options.methodDictionary">Dictionary / Translation API</option>
+              <option value="ai" data-i18n="options.methodAi">AI — context-aware translation</option>
             </select>
           </label>
-          <button id="save-profile" class="primary" type="submit">שמירת העדפות</button>
+          <button id="save-profile" class="primary" type="submit" data-i18n="options.save">Save preferences</button>
         </form>
       </section>
 
       <section class="card">
-        <h2>התנהגות התוסף</h2>
+        <h2 data-i18n="options.behaviorTitle">Extension behavior</h2>
         <label class="toggle-row">
-          <span><strong>תרגום בלחיצה כפולה וכפתור ליד סימון</strong><small>מציג תרגום מיד בלחיצה כפולה ופעולת GotIt ליד טקסט מסומן. מופעל כברירת מחדל ואפשר לכבות בכל עת.</small></span>
+          <span><strong data-i18n="options.floatingTitle">Double-click translation and selection button</strong><small data-i18n="options.floatingDescription">Shows a translation on double-click and a GotIt action beside selected text.</small></span>
           <input id="floating-action" type="checkbox" role="switch">
         </label>
       </section>
 
       <section class="card privacy">
-        <h2>פרטיות ואבטחה</h2>
+        <h2 data-i18n="options.privacyTitle">Privacy and security</h2>
         <ul>
-          <li>GotIt שומר תוכן רק בעקבות פעולה מפורשת שלך.</li>
-          <li>נשמרים המילה או הביטוי, המשפט, כותרת העמוד וה־URL — לא ה־HTML או העמוד המלא.</li>
+          <li data-i18n="options.privacyAction">GotIt saves content only after an explicit action from you.</li>
+          <li data-i18n="options.privacyData">The word or phrase, sentence, page title and URL are saved — never the HTML or full page.</li>
         </ul>
       </section>
       <div id="status" role="status" aria-live="polite"></div>

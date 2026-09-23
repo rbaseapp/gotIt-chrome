@@ -13,13 +13,16 @@ export function populateLanguageSelect(select: HTMLSelectElement, includeAuto = 
   if (includeAuto) {
     const automatic = document.createElement('option');
     automatic.value = '';
-    automatic.textContent = 'זיהוי אוטומטי (Google)';
+    automatic.textContent = document.documentElement.lang === 'he'
+      ? 'זיהוי אוטומטי (Google)'
+      : 'Automatic detection (Google)';
     select.append(automatic);
   }
+  const displayNames = new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'language' });
   for (const [code, label] of LANGUAGE_OPTIONS) {
     const option = document.createElement('option');
     option.value = code;
-    option.textContent = `${label} · ${code}`;
+    option.textContent = `${displayNames.of(code) ?? label} · ${code}`;
     select.append(option);
   }
 }

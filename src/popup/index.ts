@@ -14,6 +14,9 @@ import type {
   PublicSession,
   TranslationMethod
 } from '../shared/types';
+import { initializeI18n, t } from '../shared/i18n';
+
+await initializeI18n();
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -90,28 +93,28 @@ function isClientError(value: unknown): value is ClientError {
 function userMessage(error: unknown): string {
   const code = isClientError(error) ? error.code : 'INTERNAL_ERROR';
   const messages: Record<string, string> = {
-    AUTHENTICATION_REQUIRED: 'צריך להתחבר מחדש ל־GotIt.',
-    UNAUTHORIZED: 'ההתחברות פגה. יש להתחבר מחדש.',
-    INVALID_CREDENTIALS: 'האימייל או הסיסמה אינם נכונים.',
-    USER_ALREADY_EXISTS: 'כבר קיים חשבון עם האימייל הזה.',
-    GOOGLE_SIGN_IN_CANCELLED: 'ההתחברות עם Google בוטלה.',
-    GOOGLE_AUTH_NOT_CONFIGURED: 'ה־Google OAuth החדש עדיין לא רשום ב־Core עבור אפליקציית GotIt.',
-    GOOGLE_TOKEN_INVALID: 'Core דחה את Google token. יש לוודא שה־Client ID החדש רשום ב־Core.',
-    GOOGLE_SIGN_IN_FAILED: 'לא הצלחנו להתחבר עם Google.',
-    OFFLINE: 'אין כרגע חיבור לרשת.',
-    NETWORK_ERROR: 'לא הצלחנו להגיע ל־GotIt. נסה שוב.',
-    VALIDATION_ERROR: 'חלק מהפרטים חסרים או אינם תקינים.',
-    SENSE_SELECTION_REQUIRED: 'צריך לבחור משמעות קיימת או ליצור משמעות חדשה.',
-    MERGE_ITEM_CHANGED: 'הפריט השתנה. טען את התצוגה המקדימה מחדש.',
-    ENRICHMENT_SELECTION_EXPIRED: 'הצעת התרגום פגה. טען תרגום מחדש.',
-    ENRICHMENT_SELECTION_INVALID: 'הצעת התרגום השתנתה. טען תרגום מחדש או שמור כתרגום ידני.',
-    CAPTURE_TEMPORARILY_UNAVAILABLE: 'השמירה אינה זמינה כרגע. אפשר לנסות שוב בבטחה.',
-    INVALID_MESSAGE: 'הבקשה מהתוסף אינה תקינה.'
+    AUTHENTICATION_REQUIRED: t('errors.AUTHENTICATION_REQUIRED'),
+    UNAUTHORIZED: t('errors.UNAUTHORIZED'),
+    INVALID_CREDENTIALS: t('errors.INVALID_CREDENTIALS'),
+    USER_ALREADY_EXISTS: t('errors.USER_ALREADY_EXISTS'),
+    GOOGLE_SIGN_IN_CANCELLED: t('errors.GOOGLE_SIGN_IN_CANCELLED'),
+    GOOGLE_AUTH_NOT_CONFIGURED: t('errors.GOOGLE_AUTH_NOT_CONFIGURED'),
+    GOOGLE_TOKEN_INVALID: t('errors.GOOGLE_TOKEN_INVALID'),
+    GOOGLE_SIGN_IN_FAILED: t('errors.GOOGLE_SIGN_IN_FAILED'),
+    OFFLINE: t('errors.OFFLINE'),
+    NETWORK_ERROR: t('errors.NETWORK_ERROR'),
+    VALIDATION_ERROR: t('errors.VALIDATION_ERROR'),
+    SENSE_SELECTION_REQUIRED: t('errors.SENSE_SELECTION_REQUIRED'),
+    MERGE_ITEM_CHANGED: t('errors.MERGE_ITEM_CHANGED'),
+    ENRICHMENT_SELECTION_EXPIRED: t('errors.ENRICHMENT_SELECTION_EXPIRED'),
+    ENRICHMENT_SELECTION_INVALID: t('errors.ENRICHMENT_SELECTION_INVALID'),
+    CAPTURE_TEMPORARILY_UNAVAILABLE: t('errors.CAPTURE_TEMPORARILY_UNAVAILABLE'),
+    INVALID_MESSAGE: t('errors.INVALID_MESSAGE')
   };
   const base =
     code === 'GOOGLE_IDENTITY_FAILED' && isClientError(error)
-      ? `Chrome לא הצליח לפתוח התחברות Google: ${error.message}`
-      : (messages[code] ?? 'משהו לא הסתדר. נסה שוב.');
+      ? t('errors.GOOGLE_IDENTITY_FAILED', { message: error.message })
+      : (messages[code] ?? t('errors.unknown'));
   return isClientError(error) && error.requestId ? `${base} (${error.requestId})` : base;
 }
 
@@ -128,7 +131,7 @@ function setBusy(button: HTMLButtonElement, busy: boolean, label?: string): void
     const text = button.querySelector<HTMLElement>('span');
     if (text) {
       if (busy && !button.disabled) button.dataset.label = text.textContent ?? '';
-      text.textContent = busy ? (label ?? 'טוען…') : (button.dataset.label ?? text.textContent);
+      text.textContent = busy ? (label ?? t('common.loading')) : (button.dataset.label ?? text.textContent);
     }
     button.disabled = busy;
     return;
@@ -136,7 +139,7 @@ function setBusy(button: HTMLButtonElement, busy: boolean, label?: string): void
   if (button.classList.contains('icon-action')) {
     if (busy) {
       button.dataset.label = button.getAttribute('aria-label') ?? '';
-      button.dataset.busyLabel = label ?? 'טוען…';
+      button.dataset.busyLabel = label ?? t('common.loading');
       button.setAttribute('aria-label', button.dataset.busyLabel);
       button.setAttribute('title', button.dataset.busyLabel);
     } else if (button.getAttribute('aria-label') === button.dataset.busyLabel) {
@@ -150,7 +153,7 @@ function setBusy(button: HTMLButtonElement, busy: boolean, label?: string): void
   }
   if (busy && !button.disabled) button.dataset.label = button.textContent ?? '';
   button.disabled = busy;
-  button.textContent = busy ? (label ?? 'טוען…') : (button.dataset.label ?? button.textContent);
+  button.textContent = busy ? (label ?? t('common.loading')) : (button.dataset.label ?? button.textContent);
 }
 
 function showView(view: 'auth' | 'capture'): void {
@@ -190,7 +193,7 @@ function setMethod(method: TranslationMethod): void {
   if (input) input.checked = true;
   const aiActive = method === 'ai';
   aiTranslation.setAttribute('aria-pressed', String(aiActive));
-  const label = aiActive ? 'תרגום AI פעיל' : 'תרגם עם AI';
+  const label = aiActive ? t('popup.aiActive') : t('popup.translateAi');
   aiTranslation.setAttribute('aria-label', label);
   aiTranslation.setAttribute('title', label);
 }
@@ -200,7 +203,7 @@ function setSourceEditing(editing: boolean): void {
   sourceEditor.hidden = !editing;
   sourceDisplay.hidden = editing;
   lexicalEditor.hidden = !editing || !preview;
-  editSource.textContent = editing ? 'סיום עריכה' : 'ערוך מילה';
+  editSource.textContent = editing ? t('popup.finishEditing') : t('popup.editSource');
   if (!editing) {
     sourceDisplay.textContent = sourceText.value.normalize('NFKC').replace(/\s+/gu, ' ').trim();
     inferItemType();
@@ -237,10 +240,10 @@ function setTranslationEditing(editing: boolean): void {
   translationEditor.hidden = !editing;
   translationDisplay.hidden = editing;
   editTranslation.setAttribute('aria-pressed', String(editing));
-  editTranslation.setAttribute('aria-label', editing ? 'סיום עריכת התרגום' : 'עריכת התרגום');
-  editTranslation.setAttribute('title', editing ? 'סיום עריכת התרגום' : 'עריכת התרגום');
+  editTranslation.setAttribute('aria-label', editing ? t('popup.finishTranslationEdit') : t('popup.editTranslation'));
+  editTranslation.setAttribute('title', editing ? t('popup.finishTranslationEdit') : t('popup.editTranslation'));
   const label = editTranslation.querySelector<HTMLElement>('.action-label');
-  if (label) label.textContent = editing ? 'סיום' : 'ערוך';
+  if (label) label.textContent = editing ? t('popup.done') : t('popup.edit');
   if (!editing) {
     translationDisplay.textContent = translationText.value.trim();
     selectStrongSenseIfPossible();
@@ -407,21 +410,21 @@ function renderPreview(result: CapturePreview): void {
   if (newSense) newSense.checked = false;
   selectStrongSenseIfPossible();
   const warnings: string[] = [];
-  if (result.requiresLanguageSelection) warnings.push('יש לבחור שפת מקור ושפת תרגום.');
+  if (result.requiresLanguageSelection) warnings.push(t('popup.chooseLanguages'));
   if (result.enrichment.status === 'not_configured') {
     warnings.push(
       result.translationMethod === 'ai'
-        ? 'תרגום AI אינו מוגדר במלואו בשרת. יש להשלים ב־Render מפתח Anthropic, שם מודל וסוד חתימה, ולאחר מכן לבצע Deploy חדש.'
-        : 'ספק התרגום האוטומטי עדיין לא הוגדר בשרת. אפשר להזין תרגום ידנית או להגדיר Google Cloud Translation / Claude ב־Render.'
+        ? t('popup.aiNotConfigured')
+        : t('popup.translationNotConfigured')
     );
   } else if (result.enrichment.status === 'unavailable' && result.translationMethod === 'ai') {
     warnings.push(aiFailureMessage(result));
   } else if (result.enrichment.status === 'unavailable') {
     warnings.push(googleFailureMessage(result));
   } else if (result.requiresManualTranslation) {
-    warnings.push('שירות התרגום לא החזיר הצעה. אפשר להזין תרגום ידנית.');
+    warnings.push(t('popup.noSuggestion'));
   }
-  if (result.existingSenses.hasMore) warnings.push('קיימות משמעויות נוספות בספרייה; מומלץ לפתוח את אפליקציית GotIt.');
+  if (result.existingSenses.hasMore) warnings.push(t('popup.moreMeanings'));
   previewWarning.textContent = warnings.join(' ');
   previewWarning.hidden = warnings.length === 0;
   previewForm.hidden = false;
@@ -431,7 +434,7 @@ function renderPreview(result: CapturePreview): void {
 async function loadPreview(triggerButton = previewButton): Promise<void> {
   const text = sourceText.value.normalize('NFKC').replace(/\s+/gu, ' ').trim();
   if (!text) {
-    showStatus('יש להזין מילה או ביטוי.', true);
+    showStatus(t('popup.enterSource'), true);
     sourceText.focus();
     return;
   }
@@ -449,7 +452,7 @@ async function loadPreview(triggerButton = previewButton): Promise<void> {
   currentContext.sentenceText = sentenceText.value.trim() || null;
   phase = nextPhase(phase, 'PREVIEW');
   const requestedMethod = currentMethod();
-  setBusy(triggerButton, true, triggerButton === aiTranslation ? 'AI מתרגם…' : 'מתרגם…');
+  setBusy(triggerButton, true, triggerButton === aiTranslation ? t('popup.aiTranslating') : t('popup.translating'));
   try {
     const input: Extract<ExtensionRequest, { type: 'PREVIEW_CAPTURE' }>['input'] = {
       selectedText: currentContext.selectedText,
@@ -476,31 +479,31 @@ async function loadPreview(triggerButton = previewButton): Promise<void> {
 function aiFailureMessage(result: CapturePreview): string {
   const codes = new Set(result.enrichment.warnings?.map((warning) => warning.code) ?? []);
   if (codes.has('ENRICHMENT_AUTHENTICATION'))
-    return 'Anthropic דחה את מפתח ה־API שמוגדר בשרת. יש להחליף את המפתח ולבצע Deploy מחדש.';
-  if (codes.has('ENRICHMENT_BILLING')) return 'חשבון Anthropic דורש Billing או קרדיט API פעיל.';
-  if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Anthropic אין הרשאה ל־Workspace או למודל שנבחר.';
+    return t('provider.anthropicAuth');
+  if (codes.has('ENRICHMENT_BILLING')) return t('provider.anthropicBilling');
+  if (codes.has('ENRICHMENT_PERMISSION')) return t('provider.anthropicPermission');
   if (codes.has('ENRICHMENT_WORKSPACE'))
-    return 'ה־Workspace שמוגדר בשרת אינו תואם למפתח Anthropic. יש להסיר או לתקן את ANTHROPIC_WORKSPACE_ID.';
+    return t('provider.anthropicWorkspace');
   if (codes.has('ENRICHMENT_MODEL_ACCESS'))
-    return 'המודל שמוגדר בשרת אינו זמין למפתח Anthropic. יש לבדוק את AI_TRANSLATION_MODEL.';
-  if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Anthropic נוצלה כרגע. אפשר לנסות שוב בעוד רגע.';
-  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Anthropic דחה את מבנה הבקשה. יש לבדוק את הגדרות המודל בשרת.';
-  if (codes.has('ENRICHMENT_TIMEOUT')) return 'Anthropic לא השיב בתוך 20 שניות.';
-  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Anthropic החזיר תשובה שהשרת לא הצליח לעבד.';
-  if (codes.has('ENRICHMENT_UPSTREAM')) return 'הבקשה ל־Anthropic נכשלה לפני שהתקבלה תשובה תקינה.';
-  return 'השרת ניסה להפעיל AI אך הבקשה נכשלה. יש לבדוק ב־Render את הגדרות Anthropic.';
+    return t('provider.anthropicModel');
+  if (codes.has('ENRICHMENT_RATE_LIMIT')) return t('provider.anthropicRate');
+  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return t('provider.anthropicRequest');
+  if (codes.has('ENRICHMENT_TIMEOUT')) return t('provider.anthropicTimeout');
+  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return t('provider.anthropicResponse');
+  if (codes.has('ENRICHMENT_UPSTREAM')) return t('provider.anthropicUpstream');
+  return t('provider.anthropicUnknown');
 }
 
 function googleFailureMessage(result: CapturePreview): string {
   const codes = new Set(result.enrichment.warnings?.map((warning) => warning.code) ?? []);
-  if (codes.has('ENRICHMENT_AUTHENTICATION')) return 'Google דחה את מפתח התרגום שמוגדר בשרת.';
-  if (codes.has('ENRICHMENT_BILLING')) return 'שירות Google Translation דורש Billing פעיל.';
-  if (codes.has('ENRICHMENT_PERMISSION')) return 'למפתח Google אין הרשאה ל־Cloud Translation API.';
-  if (codes.has('ENRICHMENT_RATE_LIMIT')) return 'מגבלת הבקשות של Google Translation נוצלה כרגע.';
-  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return 'Google דחה את בקשת התרגום או את קודי השפה.';
-  if (codes.has('ENRICHMENT_TIMEOUT')) return 'Google Translation לא השיב בזמן. אפשר ללחוץ שוב ולנסות מחדש.';
-  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return 'Google החזיר תשובה שלא ניתן לעבד.';
-  return 'שירות Google Translation אינו זמין כרגע. אפשר ללחוץ שוב ולנסות מחדש.';
+  if (codes.has('ENRICHMENT_AUTHENTICATION')) return t('provider.googleAuth');
+  if (codes.has('ENRICHMENT_BILLING')) return t('provider.googleBilling');
+  if (codes.has('ENRICHMENT_PERMISSION')) return t('provider.googlePermission');
+  if (codes.has('ENRICHMENT_RATE_LIMIT')) return t('provider.googleRate');
+  if (codes.has('ENRICHMENT_INVALID_REQUEST')) return t('provider.googleRequest');
+  if (codes.has('ENRICHMENT_TIMEOUT')) return t('provider.googleTimeout');
+  if (codes.has('ENRICHMENT_INVALID_RESPONSE')) return t('provider.googleResponse');
+  return t('provider.googleUnknown');
 }
 
 function candidateProofIsCurrent(candidate: EnrichmentCandidate): boolean {
@@ -535,17 +538,17 @@ async function save(): Promise<void> {
   const sourceCode = canonicalLanguage(sourceLanguage.value);
   const targetCode = canonicalLanguage(targetLanguage.value);
   if (!sourceCode || !targetCode || !translationText.value.trim()) {
-    showStatus('יש למלא שפות ותרגום תקינים.', true);
+    showStatus(t('popup.validSaveFields'), true);
     return;
   }
   if (lexicalFingerprint() !== previewFingerprint) {
-    showStatus('המילה או השפות השתנו. יש להציג תרגום מחדש לפני השמירה.', true);
+    showStatus(t('popup.previewChanged'), true);
     return;
   }
   const providerCandidate = selectedCandidate && candidateProofIsCurrent(selectedCandidate) ? selectedCandidate : null;
   if (savedLearningItemId) {
     phase = nextPhase(phase, 'SAVE');
-    setBusy(saveButton, true, 'שומר…');
+    setBusy(saveButton, true, t('popup.saving'));
     try {
       await request({
         type: 'UPDATE_SAVED_ITEM',
@@ -563,8 +566,8 @@ async function save(): Promise<void> {
         }
       });
       phase = nextPhase(phase, 'SAVED');
-      showSavedState('השינויים נשמרו', `“${sourceText.value.trim()}” · אפשר להמשיך לצפות ולערוך`);
-      showStatus('השינויים במילה נשמרו.');
+      showSavedState(t('popup.changesSavedTitle'), t('popup.changesSavedDetails', { source: sourceText.value.trim() }));
+      showStatus(t('popup.changesSaved'));
     } catch (error) {
       phase = nextPhase(phase, isClientError(error) && error.code === 'OFFLINE' ? 'OFFLINE' : 'SAVE_ERROR');
       showStatus(userMessage(error), true);
@@ -575,7 +578,7 @@ async function save(): Promise<void> {
   }
   const decision = senseDecision();
   if (!decision) {
-    showStatus('יש לבחור משמעות קיימת או משמעות חדשה.', true);
+    showStatus(t('popup.selectMeaning'), true);
     return;
   }
   const eventId = saveEventId ?? crypto.randomUUID();
@@ -613,22 +616,22 @@ async function save(): Promise<void> {
     clientEventId: eventId
   };
   phase = nextPhase(phase, 'SAVE');
-  setBusy(saveButton, true, 'שומר…');
+  setBusy(saveButton, true, t('popup.saving'));
   try {
     const result = await request({ type: 'SAVE_CAPTURE', input, eventId });
     phase = nextPhase(phase, 'SAVED');
     savedLearningItemId = result.learningItemId;
     const labels = {
-      new: 'חדש',
-      learning: 'בלמידה',
-      reviewing: 'בחזרה',
-      mastered: 'נלמד'
+      new: t('popup.statusNew'),
+      learning: t('popup.statusLearning'),
+      reviewing: t('popup.statusReviewing'),
+      mastered: t('popup.statusMastered')
     };
     showSavedState(
-      result.outcome === 'merged' ? 'ההקשר נוסף למילה' : 'נשמר ב־GotIt',
-      `“${result.sourceText}” · ${labels[result.learningStatus]} · אפשר להמשיך לצפות ולערוך`
+      result.outcome === 'merged' ? t('popup.contextAdded') : t('popup.savedTitle'),
+      t('popup.savedDetails', { source: result.sourceText, status: labels[result.learningStatus] })
     );
-    showStatus('המילה נשמרה. אפשר להמשיך לצפות בה או לערוך אותה.');
+    showStatus(t('popup.wordSaved'));
   } catch (error) {
     phase = nextPhase(phase, isClientError(error) && error.code === 'OFFLINE' ? 'OFFLINE' : 'SAVE_ERROR');
     showStatus(userMessage(error), true);
@@ -640,7 +643,7 @@ async function save(): Promise<void> {
 async function removeSaved(): Promise<void> {
   const learningItemId = savedLearningItemId;
   if (!learningItemId) return;
-  setBusy(removeSavedButton, true, 'מסיר…');
+  setBusy(removeSavedButton, true, t('popup.removing'));
   try {
     await request({ type: 'REMOVE_SAVED_ITEM', learningItemId });
     savedLearningItemId = null;
@@ -653,7 +656,7 @@ async function removeSaved(): Promise<void> {
     removedSense?.remove();
     const newSense = document.querySelector<HTMLInputElement>('input[name="sense"][value="new"]');
     if (newSense && !sensesElement.querySelector('input[name="sense"]')) newSense.checked = true;
-    showStatus('המילה הוסרה מהשמורים.');
+    showStatus(t('popup.wordRemoved'));
   } catch (error) {
     showStatus(userMessage(error), true);
   } finally {
@@ -667,7 +670,7 @@ function renderAuthMode(): void {
   element<HTMLButtonElement>('login-tab').setAttribute('aria-selected', String(login));
   element<HTMLButtonElement>('register-tab').classList.toggle('active', !login);
   element<HTMLButtonElement>('register-tab').setAttribute('aria-selected', String(!login));
-  element<HTMLButtonElement>('email-submit').textContent = login ? 'כניסה' : 'יצירת חשבון';
+  element<HTMLButtonElement>('email-submit').textContent = login ? t('popup.login') : t('popup.createAccount');
   element<HTMLInputElement>('password').autocomplete = login ? 'current-password' : 'new-password';
 }
 
@@ -729,10 +732,10 @@ element<HTMLFormElement>('auth-form').addEventListener('submit', (event) => {
   const email = element<HTMLInputElement>('email').value.trim();
   const password = element<HTMLInputElement>('password').value;
   if (!email || password.length < 12) {
-    showStatus('יש להזין אימייל וסיסמה בת 12 תווים לפחות.', true);
+    showStatus(t('popup.loginValidation'), true);
     return;
   }
-  setBusy(button, true, authMode === 'login' ? 'נכנס…' : 'יוצר חשבון…');
+  setBusy(button, true, authMode === 'login' ? t('popup.signingIn') : t('popup.creatingAccount'));
   void request({ type: 'AUTH_EMAIL', mode: authMode, email, password })
     .then(authenticated)
     .catch((error: unknown) => showStatus(userMessage(error), true))
@@ -740,7 +743,7 @@ element<HTMLFormElement>('auth-form').addEventListener('submit', (event) => {
 });
 element<HTMLButtonElement>('google-button').addEventListener('click', () => {
   const button = element<HTMLButtonElement>('google-button');
-  setBusy(button, true, 'מתחבר…');
+  setBusy(button, true, t('popup.connecting'));
   void request({ type: 'AUTH_GOOGLE' })
     .then(authenticated)
     .catch((error: unknown) => showStatus(userMessage(error), true))
@@ -756,7 +759,7 @@ element<HTMLButtonElement>('logout-button').addEventListener('click', () => {
 element<HTMLButtonElement>('read-selection').addEventListener('click', () => {
   const button = element<HTMLButtonElement>('read-selection');
   phase = nextPhase(phase, 'EXTRACT');
-  setBusy(button, true, 'קורא…');
+  setBusy(button, true, t('popup.reading'));
   void request({ type: 'GET_ACTIVE_CONTEXT', selectedText: sourceText.value })
     .then(async (result) => {
       if (!result.selectedText) throw new Error('NO_SELECTION');
@@ -766,7 +769,7 @@ element<HTMLButtonElement>('read-selection').addEventListener('click', () => {
     })
     .catch(() => {
       phase = nextPhase(phase, 'CONTEXT_ERROR');
-      showStatus('לא נמצא סימון בעמוד. אפשר להקליד ידנית.', true);
+      showStatus(t('popup.noSelection'), true);
     })
     .finally(() => setBusy(button, false));
 });
