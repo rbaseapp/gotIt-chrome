@@ -42,7 +42,7 @@ if (!state.__gotitContentLoaded) {
   function appendLogo(parent: HTMLElement): void {
     const mark = document.createElement('span');
     mark.className = 'mark';
-    mark.textContent = '✓';
+    mark.innerHTML = '<svg viewBox="0 0 194 194" aria-hidden="true"><rect width="194" height="194" rx="45" fill="#286F5C"/><path d="M97 149c-8 7-23 6-29-5-15 2-25-11-21-24-12-8-10-23 0-30-5-13 4-25 18-26 4-13 20-17 32-9 12-8 28-4 32 9 14 1 23 13 18 26 10 7 12 22 0 30 4 13-6 26-21 24-6 11-21 12-29 5Z" fill="none" stroke="#FFFEFB" stroke-width="7" stroke-linejoin="round"/><path d="M97 55v94M77 71c-9 5-10 15-4 21m-20 20c9-5 18-1 20 8m-1 17c3-10 11-14 25-11m20-55c9 5 10 15 4 21m20 20c-9-5-18-1-20 8m1 17c-3-10-11-14-25-11" fill="none" stroke="#FFFEFB" stroke-width="5.5" stroke-linecap="round"/><circle cx="153" cy="43" r="24" fill="#F8D98D"/><path d="M153 27c2 10 6 14 16 16-10 2-14 6-16 16-2-10-6-14-16-16 10-2 14-6 16-16Z" fill="#286F5C"/><text x="97" y="176" text-anchor="middle" fill="#F8D98D" font-family="Arial,Microsoft YaHei,Noto Sans CJK SC,Noto Naskh Arabic,sans-serif" font-size="20" font-weight="700" letter-spacing="-1">A<tspan dx="1">文</tspan><tspan dx="1">ع</tspan></text></svg>';
     mark.setAttribute('aria-hidden', 'true');
     const name = document.createElement('strong');
     name.textContent = 'GotIt';
@@ -71,7 +71,8 @@ if (!state.__gotitContentLoaded) {
       }
       button:hover { background: #4032c2; transform: translateY(-1px); }
       button:focus-visible { outline: 3px solid #b9b2ff; outline-offset: 2px; }
-      .mark { display:grid; place-items:center; width:18px; height:18px; border-radius:5px; background:#fff; color:#5142db; font-size:12px; font-weight:900; }
+      .mark { display:block; width:18px; height:18px; border-radius:5px; overflow:hidden; }
+      .mark svg { display:block; width:100%; height:100%; }
     `;
     const button = document.createElement('button');
     button.type = 'button';
@@ -145,7 +146,8 @@ if (!state.__gotitContentLoaded) {
       .term-wrap { display:flex; align-items:center; gap:12px; min-width:0; }
       .term { color:var(--text); font-size:20px; line-height:1.25; font-weight:750; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .brand { display:flex; align-items:center; gap:7px; flex:0 0 auto; color:#b7bfd4; font-size:11px; font-weight:750; letter-spacing:.25px; }
-      .mark { display:grid; place-items:center; width:22px; height:22px; border-radius:7px; background:linear-gradient(145deg, #8d9aff, #6576f4); color:#fff; font-size:13px; font-weight:900; box-shadow:0 5px 14px rgba(101,118,244,.28); }
+      .mark { display:block; width:22px; height:22px; border-radius:7px; overflow:hidden; box-shadow:0 5px 14px rgba(40,111,92,.28); }
+      .mark svg { display:block; width:100%; height:100%; }
       .close, .round-action { display:grid; place-items:center; flex:0 0 auto; cursor:pointer; padding:0; }
       .close { width:26px; height:26px; border-radius:8px; background:transparent; color:#8f99b0; }
       .close:hover { background:#252c3f; color:#fff; }
