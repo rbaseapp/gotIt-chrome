@@ -165,6 +165,10 @@
     "googleUnknown": "Google Translation ist momentan nicht verfügbar. Versuche es erneut."
   },
   "content": {
+    "aiImproving": "Die KI verfeinert die Übersetzung…",
+    "aiUpgradeFailed": "Die KI-Verfeinerung ist nicht verfügbar. Die Google-Übersetzung wird angezeigt.",
+    "moreMeanings": "Weitere Bedeutungen anzeigen",
+    "loadingMoreMeanings": "Weitere Bedeutungen werden gesucht…",
     "practiceTitle": "Weitere Wörter warten auf dich",
     "practiceDescription": "Öffne GotIt, um alle gespeicherten Wörter zu üben.",
     "practiceAction": "In der App üben",

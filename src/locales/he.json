@@ -165,6 +165,10 @@
     "googleUnknown": "שירות Google Translation אינו זמין כרגע. אפשר ללחוץ שוב ולנסות מחדש."
   },
   "content": {
+    "aiImproving": "ה-AI משפר את התרגום…",
+    "aiUpgradeFailed": "שיפור התרגום באמצעות AI אינו זמין כרגע. מוצג התרגום של Google.",
+    "moreMeanings": "הצג משמעויות נוספות",
+    "loadingMoreMeanings": "מחפש משמעויות נוספות…",
     "practiceTitle": "יש עוד מילים שמחכות לך",
     "practiceDescription": "היכנס ל־GotIt כדי לתרגל את כל המילים ששמרת.",
     "practiceAction": "לתרגול באפליקציה",

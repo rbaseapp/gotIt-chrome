@@ -165,6 +165,10 @@
     "googleUnknown": "Google Traduction est actuellement indisponible. Réessayez."
   },
   "content": {
+    "aiImproving": "L’IA affine la traduction…",
+    "aiUpgradeFailed": "L’amélioration par IA est indisponible. La traduction Google est affichée.",
+    "moreMeanings": "Afficher plus de sens",
+    "loadingMoreMeanings": "Recherche d’autres sens…",
     "practiceTitle": "D'autres mots vous attendent",
     "practiceDescription": "Ouvrez GotIt pour pratiquer tous les mots que vous avez enregistrés.",
     "practiceAction": "Pratiquer dans l'application",

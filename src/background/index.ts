@@ -219,14 +219,11 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     };
     if (request.translationMethod) input.translationMethod = request.translationMethod;
     const settings = await getSettings();
-    if (settings.defaultSourceLanguage) input.sourceLanguageCode = settings.defaultSourceLanguage;
-    if (settings.defaultTranslationLanguage) input.translationLanguageCode = settings.defaultTranslationLanguage;
-    let preview = await previewCapture(input);
     const targetLanguage = settings.defaultTranslationLanguage ?? uiLanguage();
-    if (preview.requiresLanguageSelection && !preview.translationLanguageCode && targetLanguage) {
-      input.translationLanguageCode = targetLanguage;
-      preview = await previewCapture(input);
-    }
+    if (settings.defaultSourceLanguage) input.sourceLanguageCode = settings.defaultSourceLanguage;
+    if (targetLanguage) input.translationLanguageCode = targetLanguage;
+    if (request.translationDetail) input.translationDetail = request.translationDetail;
+    const preview = await previewCapture(input);
     return { preview, inlineCaptureId: await storeInline(captured, preview) };
   }
   if (request.type === 'INLINE_SAVE') {

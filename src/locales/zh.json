@@ -165,6 +165,10 @@
     "googleUnknown": "Google 翻译暂不可用。请重试。"
   },
   "content": {
+    "aiImproving": "AI 正在优化翻译…",
+    "aiUpgradeFailed": "AI 优化暂不可用，正在显示 Google 翻译。",
+    "moreMeanings": "显示更多含义",
+    "loadingMoreMeanings": "正在查找更多含义…",
     "practiceTitle": "更多单词在等待您",
     "practiceDescription": "打开 GotIt 练习所有已保存的单词。",
     "practiceAction": "在应用中练习",

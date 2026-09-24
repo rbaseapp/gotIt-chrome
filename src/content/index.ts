@@ -205,6 +205,12 @@ if (!state.__gotitContentLoaded) {
       .meaning-option[aria-pressed="true"] { border-color:var(--green); background:var(--green-soft); box-shadow:inset 0 0 0 1px rgba(44,122,98,.08); }
       .meaning-option strong { overflow-wrap:anywhere; font-size:13px; }
       .meaning-option small { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .ai-progress { display:flex; align-items:center; gap:8px; margin-top:11px; padding:9px 11px; border:1px solid #d8d1eb; border-radius:11px; background:var(--purple-soft); color:#665b82; font-size:11.5px; font-weight:750; }
+      .ai-progress .spinner { width:15px; height:15px; flex:0 0 auto; border-color:#d8d1eb; border-top-color:var(--purple); }
+      .more-meanings { display:flex; justify-content:center; margin-top:11px; }
+      .more-meanings button { min-height:36px; padding:7px 12px; border:1px solid #d8d1eb; border-radius:10px; background:var(--purple-soft); color:#5d517b; cursor:pointer; font-size:12px; font-weight:800; }
+      .more-meanings button:hover { border-color:var(--purple); transform:translateY(-1px); }
+      .more-meanings button:disabled { cursor:wait; opacity:.65; transform:none; }
       .meta { margin-top:11px; color:var(--muted); font-size:11px; direction:ltr; text-align:start; }
       .loading-state { min-height:169px; display:grid; place-content:center; justify-items:center; gap:10px; color:var(--muted); text-align:center; }
       .spinner { width:25px; height:25px; border:2px solid #dce5df; border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite; }
@@ -223,6 +229,7 @@ if (!state.__gotitContentLoaded) {
       :host([data-theme="dark"]) .round-action { color:#b5c4bd; }
       :host([data-theme="dark"]) .explanation { border-color:#51496e; }
       :host([data-theme="dark"]) .explanation-label, :host([data-theme="dark"]) .explanation p, :host([data-theme="dark"]) .alternatives { color:#c5bce2; }
+      :host([data-theme="dark"]) .ai-progress, :host([data-theme="dark"]) .more-meanings button { border-color:#51496e; color:#c5bce2; }
       :host([data-theme="dark"]) .provider-warning { color:#ead58c; background:#342f1c; border-color:#665628; }
       :host([data-theme="dark"]) .practice-invite { border-color:#315447; background:linear-gradient(135deg, #173128, #19231f); }
       :host([data-theme="dark"]) .practice-invite p { color:#afbeb7; }
@@ -384,9 +391,20 @@ if (!state.__gotitContentLoaded) {
       return contentT('provider.googleUnknown');
     }
 
-    function renderPreview(result: InlinePreviewResult, candidateIndex = 0): void {
+    function renderPreview(
+      result: InlinePreviewResult,
+      candidateIndex = 0,
+      options: {
+        displayMethod?: 'dictionary' | 'ai';
+        aiPending?: boolean;
+        aiFailed?: boolean;
+        canLoadMore?: boolean;
+      } = {}
+    ): void {
       const { preview, inlineCaptureId } = result;
-      setActiveMethod(preview.translationMethod === 'ai' ? 'ai' : 'dictionary');
+      setActiveMethod(
+        options.displayMethod ?? (preview.translationMethod === 'ai' ? 'ai' : 'dictionary')
+      );
       const candidate = preview.enrichment.candidates[candidateIndex] ?? preview.enrichment.candidates[0];
       body.className = 'body';
       if (!candidate) {
@@ -486,7 +504,7 @@ if (!state.__gotitContentLoaded) {
         optionDetails.textContent = meaning.partOfSpeech ?? meaning.explanation ?? '';
         option.append(optionText);
         if (optionDetails.textContent) option.append(optionDetails);
-        option.addEventListener('click', () => renderPreview(result, index));
+        option.addEventListener('click', () => renderPreview(result, index, options));
         meaningOptions.append(option);
       });
       meaningList.append(meaningTitle, meaningOptions);
@@ -557,6 +575,7 @@ if (!state.__gotitContentLoaded) {
         if (saveLabel) saveLabel.textContent = contentT('content.removeShort');
       }
       quickSave.addEventListener('click', () => {
+        if (options.aiPending) requestVersion += 1;
         quickSave.disabled = true;
         quickSave.classList.add('saving');
         const removing = savedLearningItemId !== null;
@@ -649,9 +668,86 @@ if (!state.__gotitContentLoaded) {
         alreadySaved.textContent = contentT('content.alreadySaved');
         body.prepend(alreadySaved);
       }
+      if (options.aiPending) {
+        const progress = document.createElement('div');
+        progress.className = 'ai-progress';
+        const progressSpinner = document.createElement('span');
+        progressSpinner.className = 'spinner';
+        const progressText = document.createElement('span');
+        progressText.textContent = contentT('content.aiImproving');
+        progress.append(progressSpinner, progressText);
+        body.append(progress);
+      } else if (options.aiFailed) {
+        const warning = document.createElement('div');
+        warning.className = 'provider-warning';
+        warning.textContent = contentT('content.aiUpgradeFailed');
+        body.append(warning);
+      }
       if (preview.enrichment.candidates.length > 1) body.append(meaningList);
       body.append(explanation, meta);
+      if (options.canLoadMore) {
+        const more = document.createElement('div');
+        more.className = 'more-meanings';
+        const moreButton = document.createElement('button');
+        moreButton.type = 'button';
+        moreButton.textContent = contentT('content.moreMeanings');
+        moreButton.addEventListener('click', () => loadMoreMeanings(moreButton));
+        more.append(moreButton);
+        body.append(more);
+      }
       fitPanel();
+    }
+
+    function requestInlinePreview(
+      translationMethod: 'dictionary' | 'ai',
+      translationDetail: 'compact' | 'expanded' = 'compact'
+    ): Promise<ResponseEnvelope<InlinePreviewResult>> {
+      return chrome.runtime.sendMessage({
+        type: 'INLINE_PREVIEW',
+        context,
+        translationMethod,
+        translationDetail
+      }) as Promise<ResponseEnvelope<InlinePreviewResult>>;
+    }
+
+    function hasTranslation(result: InlinePreviewResult): boolean {
+      return result.preview.enrichment.candidates.length > 0;
+    }
+
+    function loadMoreMeanings(button: HTMLButtonElement): void {
+      const version = requestVersion;
+      button.disabled = true;
+      button.textContent = contentT('content.loadingMoreMeanings');
+      scheduleHide(INLINE_TRANSLATION_TIMEOUT_MS + 5_000);
+      void requestInlinePreview('ai', 'expanded')
+        .then((response) => {
+          if (host !== currentHost || version !== requestVersion) return;
+          if (!response.ok || !hasTranslation(response.data)) {
+            button.disabled = false;
+            button.textContent = contentT('content.moreMeanings');
+            const warning = document.createElement('div');
+            warning.className = 'provider-warning';
+            warning.textContent = response.ok
+              ? providerFailureMessage(response.data.preview)
+              : statusMessage(response.error);
+            button.parentElement?.after(warning);
+            fitPanel();
+            return;
+          }
+          dictionaryButton.disabled = false;
+          aiButton.disabled = !aiTranslationAvailable;
+          renderPreview(response.data, 0, { displayMethod: 'ai' });
+        })
+        .catch(() => {
+          if (host !== currentHost || version !== requestVersion) return;
+          button.disabled = false;
+          button.textContent = contentT('content.moreMeanings');
+          const warning = document.createElement('div');
+          warning.className = 'provider-warning';
+          warning.textContent = contentT('content.unreachable');
+          button.parentElement?.after(warning);
+          fitPanel();
+        });
     }
 
     function loadInlinePreview(method?: 'dictionary' | 'ai'): void {
@@ -661,42 +757,117 @@ if (!state.__gotitContentLoaded) {
       renderLoading(expectedMethod);
       fitPanel();
       scheduleHide(INLINE_TRANSLATION_TIMEOUT_MS + 5_000);
+
+      if (expectedMethod === 'dictionary') {
+        const requestTimeout = window.setTimeout(() => {
+          if (requestFinished || host !== currentHost || version !== requestVersion) return;
+          requestFinished = true;
+          dictionaryButton.disabled = false;
+          aiButton.disabled = !aiTranslationAvailable;
+          renderFailure(contentT('content.translationTimeout'));
+        }, INLINE_TRANSLATION_TIMEOUT_MS);
+        void requestInlinePreview('dictionary')
+          .then((response) => {
+            if (requestFinished || host !== currentHost || version !== requestVersion) return;
+            requestFinished = true;
+            window.clearTimeout(requestTimeout);
+            dictionaryButton.disabled = false;
+            aiButton.disabled = !aiTranslationAvailable;
+            if (!response.ok) {
+              renderFailure(statusMessage(response.error), response.error.code.includes('AUTH'));
+              return;
+            }
+            renderPreview(response.data);
+          })
+          .catch(() => {
+            if (requestFinished || host !== currentHost || version !== requestVersion) return;
+            requestFinished = true;
+            window.clearTimeout(requestTimeout);
+            dictionaryButton.disabled = false;
+            aiButton.disabled = !aiTranslationAvailable;
+            renderFailure(contentT('content.unreachable'));
+          });
+        return;
+      }
+
+      let dictionaryResult: InlinePreviewResult | null = null;
+      let dictionarySettled = false;
+      let aiSettled = false;
+      let aiError: ClientError | null = null;
       const requestTimeout = window.setTimeout(() => {
         if (requestFinished || host !== currentHost || version !== requestVersion) return;
         requestFinished = true;
         dictionaryButton.disabled = false;
         aiButton.disabled = !aiTranslationAvailable;
-        renderFailure(
-          expectedMethod === 'ai'
-            ? contentT('content.aiTimeout')
-            : contentT('content.translationTimeout')
-        );
+        if (dictionaryResult) {
+          renderPreview(dictionaryResult, 0, { displayMethod: 'ai', aiFailed: true });
+        } else {
+          renderFailure(contentT('content.aiTimeout'));
+        }
       }, INLINE_TRANSLATION_TIMEOUT_MS);
-      void chrome.runtime
-        .sendMessage({
-          type: 'INLINE_PREVIEW',
-          context,
-          translationMethod: expectedMethod
-        })
-        .then((response: ResponseEnvelope<InlinePreviewResult>) => {
-          if (requestFinished || host !== currentHost || version !== requestVersion) return;
+
+      const showFallbackAfterAiFailure = () => {
+        if (
+          requestFinished ||
+          !aiSettled ||
+          host !== currentHost ||
+          version !== requestVersion
+        ) return;
+        if (dictionaryResult) {
           requestFinished = true;
           window.clearTimeout(requestTimeout);
           dictionaryButton.disabled = false;
           aiButton.disabled = !aiTranslationAvailable;
-          if (!response.ok) {
-            renderFailure(statusMessage(response.error), response.error.code.includes('AUTH'));
-            return;
+          renderPreview(dictionaryResult, 0, { displayMethod: 'ai', aiFailed: true });
+        } else if (dictionarySettled) {
+          requestFinished = true;
+          window.clearTimeout(requestTimeout);
+          dictionaryButton.disabled = false;
+          aiButton.disabled = !aiTranslationAvailable;
+          renderFailure(
+            aiError ? statusMessage(aiError) : contentT('content.aiUpgradeFailed'),
+            Boolean(aiError?.code.includes('AUTH'))
+          );
+        }
+      };
+
+      void requestInlinePreview('dictionary')
+        .then((response) => {
+          if (requestFinished || host !== currentHost || version !== requestVersion) return;
+          dictionarySettled = true;
+          if (response.ok && hasTranslation(response.data)) {
+            dictionaryResult = response.data;
+            if (!aiSettled) {
+              dictionaryButton.disabled = false;
+              aiButton.disabled = true;
+              renderPreview(response.data, 0, { displayMethod: 'ai', aiPending: true });
+            }
           }
-          renderPreview(response.data);
+          showFallbackAfterAiFailure();
         })
         .catch(() => {
+          dictionarySettled = true;
+          showFallbackAfterAiFailure();
+        });
+
+      void requestInlinePreview('ai', 'compact')
+        .then((response) => {
           if (requestFinished || host !== currentHost || version !== requestVersion) return;
+          aiSettled = true;
+          if (!response.ok || !hasTranslation(response.data)) {
+            aiError = response.ok ? null : response.error;
+            showFallbackAfterAiFailure();
+            return;
+          }
           requestFinished = true;
           window.clearTimeout(requestTimeout);
           dictionaryButton.disabled = false;
           aiButton.disabled = !aiTranslationAvailable;
-          renderFailure(contentT('content.unreachable'));
+          renderPreview(response.data, 0, { displayMethod: 'ai', canLoadMore: true });
+        })
+        .catch(() => {
+          aiSettled = true;
+          showFallbackAfterAiFailure();
         });
     }
 

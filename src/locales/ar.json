@@ -165,6 +165,10 @@
     "googleUnknown": "Google Translation غير متاح حاليًا. حاول مرة أخرى."
   },
   "content": {
+    "aiImproving": "يعمل الذكاء الاصطناعي على تحسين الترجمة…",
+    "aiUpgradeFailed": "تحسين الترجمة بالذكاء الاصطناعي غير متاح. يتم عرض ترجمة Google.",
+    "moreMeanings": "عرض معانٍ إضافية",
+    "loadingMoreMeanings": "جارٍ البحث عن معانٍ إضافية…",
     "practiceTitle": "المزيد من الكلمات تنتظرك",
     "practiceDescription": "افتح GotIt لممارسة جميع الكلمات التي حفظتها.",
     "practiceAction": "مارس في التطبيق",

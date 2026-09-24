@@ -21,7 +21,12 @@ export type ExtensionRequest =
   | { type: 'GET_ACTIVE_CONTEXT'; selectedText?: string }
   | { type: 'GET_CONTENT_CONFIG' }
   | { type: 'CONTENT_CAPTURE'; context: CaptureContext }
-  | { type: 'INLINE_PREVIEW'; context: CaptureContext; translationMethod?: TranslationMethod }
+  | {
+      type: 'INLINE_PREVIEW';
+      context: CaptureContext;
+      translationMethod?: TranslationMethod;
+      translationDetail?: 'compact' | 'expanded';
+    }
   | { type: 'INLINE_SAVE'; inlineCaptureId: string; candidateIndex: number }
   | { type: 'PREVIEW_CAPTURE'; input: PreviewRequest }
   | { type: 'SAVE_CAPTURE'; input: CaptureSaveInput; eventId: string }
@@ -38,6 +43,7 @@ export interface PreviewRequest {
   translationLanguageCode?: string;
   documentLanguageHint?: string;
   translationMethod?: TranslationMethod;
+  translationDetail?: 'compact' | 'expanded';
   context?: {
     sentenceText: string | null;
     paragraphText: string | null;
@@ -105,13 +111,14 @@ function nullableString(value: unknown): boolean {
 
 function isPreviewRequest(value: unknown): value is PreviewRequest {
   if (!isRecord(value) || typeof value.selectedText !== 'string') return false;
-  if (!hasOnlyKeys(value, ['selectedText', 'sourceText', 'sourceLanguageCode', 'translationLanguageCode', 'documentLanguageHint', 'translationMethod', 'context'])) return false;
+  if (!hasOnlyKeys(value, ['selectedText', 'sourceText', 'sourceLanguageCode', 'translationLanguageCode', 'documentLanguageHint', 'translationMethod', 'translationDetail', 'context'])) return false;
   if (
     !optionalString(value.sourceText) ||
     !optionalString(value.sourceLanguageCode) ||
     !optionalString(value.translationLanguageCode) ||
     !optionalString(value.documentLanguageHint) ||
-    (value.translationMethod !== undefined && !['auto', 'dictionary', 'ai'].includes(String(value.translationMethod)))
+    (value.translationMethod !== undefined && !['auto', 'dictionary', 'ai'].includes(String(value.translationMethod))) ||
+    (value.translationDetail !== undefined && !['compact', 'expanded'].includes(String(value.translationDetail)))
   ) return false;
   if (value.context !== undefined) {
     if (!isRecord(value.context)) return false;
@@ -228,13 +235,21 @@ export function parseRequest(value: unknown): ExtensionRequest | null {
       return hasOnlyKeys(value, ['type', 'context']) && isCaptureContext(value.context) ? { type: value.type, context: value.context } : null;
     case 'INLINE_PREVIEW':
       if (
-        !hasOnlyKeys(value, ['type', 'context', 'translationMethod']) ||
+        !hasOnlyKeys(value, ['type', 'context', 'translationMethod', 'translationDetail']) ||
         !isCaptureContext(value.context) ||
-        (value.translationMethod !== undefined && !['auto', 'dictionary', 'ai'].includes(String(value.translationMethod)))
+        (value.translationMethod !== undefined && !['auto', 'dictionary', 'ai'].includes(String(value.translationMethod))) ||
+        (value.translationDetail !== undefined && !['compact', 'expanded'].includes(String(value.translationDetail)))
       ) return null;
-      return value.translationMethod === undefined
-        ? { type: value.type, context: value.context }
-        : { type: value.type, context: value.context, translationMethod: value.translationMethod as TranslationMethod };
+      return {
+        type: value.type,
+        context: value.context,
+        ...(value.translationMethod === undefined
+          ? {}
+          : { translationMethod: value.translationMethod as TranslationMethod }),
+        ...(value.translationDetail === undefined
+          ? {}
+          : { translationDetail: value.translationDetail as 'compact' | 'expanded' }),
+      };
     case 'INLINE_SAVE':
       return hasOnlyKeys(value, ['type', 'inlineCaptureId', 'candidateIndex']) &&
         typeof value.inlineCaptureId === 'string' &&

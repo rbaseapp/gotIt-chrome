@@ -19,10 +19,21 @@ test('validates capture context shape crossing the content-script boundary', () 
   assert.equal(parseRequest({ type: 'CONTENT_CAPTURE', context: { ...context, pageUrl: 5 } }), null);
   assert.deepEqual(parseRequest({ type: 'INLINE_PREVIEW', context }), { type: 'INLINE_PREVIEW', context });
   assert.deepEqual(
-    parseRequest({ type: 'INLINE_PREVIEW', context, translationMethod: 'ai' }),
-    { type: 'INLINE_PREVIEW', context, translationMethod: 'ai' }
+    parseRequest({ type: 'INLINE_PREVIEW', context, translationMethod: 'ai', translationDetail: 'compact' }),
+    { type: 'INLINE_PREVIEW', context, translationMethod: 'ai', translationDetail: 'compact' }
   );
   assert.equal(parseRequest({ type: 'INLINE_PREVIEW', context, translationMethod: 'unsafe' }), null);
+  assert.equal(parseRequest({ type: 'INLINE_PREVIEW', context, translationDetail: 'verbose' }), null);
+  assert.deepEqual(
+    parseRequest({
+      type: 'PREVIEW_CAPTURE',
+      input: { selectedText: 'word', translationMethod: 'ai', translationDetail: 'expanded' }
+    }),
+    {
+      type: 'PREVIEW_CAPTURE',
+      input: { selectedText: 'word', translationMethod: 'ai', translationDetail: 'expanded' }
+    }
+  );
   assert.deepEqual(
     parseRequest({ type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000', candidateIndex: 2 }),
     { type: 'INLINE_SAVE', inlineCaptureId: '123e4567-e89b-42d3-a456-426614174000', candidateIndex: 2 }

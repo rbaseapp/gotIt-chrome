@@ -165,6 +165,10 @@
     "googleUnknown": "Google Translation в настоящее время недоступен. Повторите попытку."
   },
   "content": {
+    "aiImproving": "ИИ уточняет перевод…",
+    "aiUpgradeFailed": "Уточнение с помощью ИИ недоступно. Показан перевод Google.",
+    "moreMeanings": "Показать другие значения",
+    "loadingMoreMeanings": "Ищем другие значения…",
     "practiceTitle": "Больше слов ждёт вас",
     "practiceDescription": "Откройте GotIt и практикуйте все сохранённые слова.",
     "practiceAction": "Практиковаться в приложении",

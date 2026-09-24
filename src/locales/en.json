@@ -165,6 +165,10 @@
     "googleUnknown": "Google Translation is currently unavailable. Try again."
   },
   "content": {
+    "aiImproving": "AI is refining the translation…",
+    "aiUpgradeFailed": "AI refinement is unavailable. Showing the Google translation.",
+    "moreMeanings": "Show more meanings",
+    "loadingMoreMeanings": "Finding more meanings…",
     "practiceTitle": "More words are waiting for you",
     "practiceDescription": "Open GotIt to practice all the words you saved.",
     "practiceAction": "Practice in the app",
