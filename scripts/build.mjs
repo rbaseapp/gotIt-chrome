@@ -7,9 +7,12 @@ import { fileURLToPath } from 'node:url';
 import { EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(root, 'dist');
+const dist = process.env.BUILD_OUTPUT_DIR
+  ? path.resolve(process.env.BUILD_OUTPUT_DIR)
+  : path.join(root, 'dist');
 const packageMetadata = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 const mode = process.env.BUILD_MODE === 'development' ? 'development' : 'production';
+const webStorePackage = process.env.WEBSTORE_PACKAGE === '1';
 const coreApiBase = process.env.CORE_API_BASE ||
   (mode === 'development' ? 'http://localhost:8080/api/v1' : 'https://rbase-core-api.onrender.com/api/v1');
 const gotitApiBase = process.env.GOTIT_API_BASE ||
@@ -64,7 +67,9 @@ await Promise.all([
 
 const manifest = {
   manifest_version: 3,
-  key: EXTENSION_PUBLIC_KEY,
+  // Keep every unpacked build on the allowlisted development identity. The
+  // Web Store staging build explicitly opts out because Chrome owns its ID.
+  ...(webStorePackage ? {} : { key: EXTENSION_PUBLIC_KEY }),
   default_locale: 'en',
   name: mode === 'development' ? '__MSG_extensionNameDev__' : '__MSG_extensionName__',
   short_name: 'GotIt',

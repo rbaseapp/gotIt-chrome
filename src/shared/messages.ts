@@ -73,7 +73,7 @@ export interface ResponseMap {
   AUTH_GOOGLE: PublicSession;
   LOGOUT: null;
   GET_ACTIVE_CONTEXT: CaptureContext;
-  GET_CONTENT_CONFIG: { floatingAction: boolean; translationMethod: 'dictionary' | 'ai'; aiTranslationAvailable: boolean; uiLocale: UiLocale; theme: 'light' | 'dark' };
+  GET_CONTENT_CONFIG: { selectionAction: boolean; doubleClickTranslation: boolean; autoCloseOnOutsideClick: boolean; popupSize: 'small' | 'medium' | 'large'; translationMethod: 'dictionary' | 'ai'; aiTranslationAvailable: boolean; uiLocale: UiLocale; theme: 'light' | 'dark' };
   CONTENT_CAPTURE: null;
   INLINE_PREVIEW: InlinePreviewResult;
   INLINE_SAVE: CaptureResult;
@@ -190,6 +190,10 @@ function isSettingsPatch(value: unknown): value is Partial<ExtensionSettings> {
   if (!isRecord(value)) return false;
   if (!hasOnlyKeys(value, [
     'floatingAction',
+    'selectionAction',
+    'doubleClickTranslation',
+    'autoCloseOnOutsideClick',
+    'popupSize',
     'autoCloseAfterSave',
     'theme',
     'onboardingComplete',
@@ -199,6 +203,10 @@ function isSettingsPatch(value: unknown): value is Partial<ExtensionSettings> {
   ])) return false;
   return (
     (value.floatingAction === undefined || typeof value.floatingAction === 'boolean') &&
+    (value.selectionAction === undefined || typeof value.selectionAction === 'boolean') &&
+    (value.doubleClickTranslation === undefined || typeof value.doubleClickTranslation === 'boolean') &&
+    (value.autoCloseOnOutsideClick === undefined || typeof value.autoCloseOnOutsideClick === 'boolean') &&
+    (value.popupSize === undefined || value.popupSize === 'small' || value.popupSize === 'medium' || value.popupSize === 'large') &&
     (value.autoCloseAfterSave === undefined || typeof value.autoCloseAfterSave === 'boolean') &&
     (value.theme === undefined || value.theme === 'light' || value.theme === 'dark') &&
     (value.onboardingComplete === undefined || typeof value.onboardingComplete === 'boolean') &&

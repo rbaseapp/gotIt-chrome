@@ -1,4 +1,5 @@
 export type TranslationMethod = 'auto' | 'dictionary' | 'ai';
+export type PopupSize = 'small' | 'medium' | 'large';
 export type ItemType = 'word' | 'phrase' | 'expression' | 'phrasal_verb' | 'other';
 export type CapturePhase =
   | 'IDLE'
@@ -105,7 +106,12 @@ export interface CoreBillingStatus {
 }
 
 export interface ExtensionSettings {
-  floatingAction: boolean;
+  selectionAction: boolean;
+  doubleClickTranslation: boolean;
+  autoCloseOnOutsideClick: boolean;
+  popupSize: PopupSize;
+  /** Legacy combined preference, accepted only while migrating older installations. */
+  floatingAction?: boolean;
   autoCloseAfterSave: boolean;
   theme: 'light' | 'dark';
   onboardingComplete: boolean;

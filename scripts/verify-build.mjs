@@ -2,11 +2,15 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { EXTENSION_ID, EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dist = path.join(root, 'dist');
+const dist = process.env.BUILD_OUTPUT_DIR
+  ? path.resolve(process.env.BUILD_OUTPUT_DIR)
+  : path.join(root, 'dist');
+const webStorePackage = process.env.WEBSTORE_PACKAGE === '1';
 const manifest = JSON.parse(await readFile(path.join(dist, 'manifest.json'), 'utf8'));
 
 function leafKeys(value, prefix = '') {
@@ -16,7 +20,16 @@ function leafKeys(value, prefix = '') {
 }
 
 assert.equal(manifest.manifest_version, 3);
-assert.equal(manifest.key, EXTENSION_PUBLIC_KEY);
+if (webStorePackage) {
+  assert.equal(manifest.key, undefined, 'Chrome Web Store packages must not contain manifest.key');
+} else {
+  assert.equal(manifest.key, EXTENSION_PUBLIC_KEY, 'Unpacked builds must retain their stable extension identity');
+  const publicKeyDer = Buffer.from(manifest.key, 'base64');
+  const derivedExtensionId = [...createHash('sha256').update(publicKeyDer).digest().subarray(0, 16)]
+    .map((byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 0x0f))}`)
+    .join('');
+  assert.equal(derivedExtensionId, EXTENSION_ID);
+}
 assert.equal(manifest.default_locale, 'en');
 assert.match(manifest.name, /^__MSG_/u);
 const localePairs = [
@@ -39,11 +52,6 @@ for (const catalog of uiCatalogs.slice(1)) {
 for (const catalog of chromeCatalogs.slice(1)) {
   assert.deepEqual(Object.keys(chromeCatalogs[0]).sort(), Object.keys(catalog).sort());
 }
-const publicKeyDer = Buffer.from(manifest.key, 'base64');
-const derivedExtensionId = [...createHash('sha256').update(publicKeyDer).digest().subarray(0, 16)]
-  .map((byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 0x0f))}`)
-  .join('');
-assert.equal(derivedExtensionId, EXTENSION_ID);
 assert.deepEqual(manifest.permissions.sort(), ['activeTab', 'contextMenus', 'identity', 'scripting', 'storage'].sort());
 assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
 assert.equal(manifest.optional_host_permissions, undefined);
@@ -80,4 +88,6 @@ assert.deepEqual(manifest.web_accessible_resources, [{
   resources: ['assets/gotit-icon.svg', 'assets/gotit-logo.svg'],
   matches: ['http://*/*', 'https://*/*']
 }]);
-console.log(`Verified MV3 package identity (${EXTENSION_ID}), security, permissions, CSP, assets and secret-free provider boundary.`);
+console.log(webStorePackage
+  ? 'Verified MV3 Web Store package, security, permissions, CSP, assets and secret-free provider boundary.'
+  : `Verified MV3 unpacked package identity (${EXTENSION_ID}), security, permissions, CSP, assets and secret-free provider boundary.`);

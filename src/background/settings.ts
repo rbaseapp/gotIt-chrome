@@ -4,7 +4,10 @@ const SETTINGS_KEY = 'gotit.settings.v1';
 const CONTENT_SCRIPT_ID = 'gotit-floating-action';
 
 export const defaultSettings: ExtensionSettings = {
-  floatingAction: true,
+  selectionAction: true,
+  doubleClickTranslation: true,
+  autoCloseOnOutsideClick: false,
+  popupSize: 'medium',
   autoCloseAfterSave: false,
   theme: 'light',
   onboardingComplete: false,
@@ -27,9 +30,22 @@ export function resolveSettings(value: unknown): ExtensionSettings {
     ? value as Partial<ExtensionSettings>
     : undefined;
   return {
-    floatingAction: typeof stored?.floatingAction === 'boolean'
-      ? stored.floatingAction
-      : defaultSettings.floatingAction,
+    selectionAction: typeof stored?.selectionAction === 'boolean'
+      ? stored.selectionAction
+      : typeof stored?.floatingAction === 'boolean'
+        ? stored.floatingAction
+        : defaultSettings.selectionAction,
+    doubleClickTranslation: typeof stored?.doubleClickTranslation === 'boolean'
+      ? stored.doubleClickTranslation
+      : typeof stored?.floatingAction === 'boolean'
+        ? stored.floatingAction
+        : defaultSettings.doubleClickTranslation,
+    autoCloseOnOutsideClick: typeof stored?.autoCloseOnOutsideClick === 'boolean'
+      ? stored.autoCloseOnOutsideClick
+      : defaultSettings.autoCloseOnOutsideClick,
+    popupSize: stored?.popupSize === 'small' || stored?.popupSize === 'medium' || stored?.popupSize === 'large'
+      ? stored.popupSize
+      : defaultSettings.popupSize,
     autoCloseAfterSave: typeof stored?.autoCloseAfterSave === 'boolean'
       ? stored.autoCloseAfterSave
       : defaultSettings.autoCloseAfterSave,
@@ -52,8 +68,20 @@ export async function getSettings(): Promise<ExtensionSettings> {
 
 export async function updateSettings(patch: Partial<ExtensionSettings>): Promise<ExtensionSettings> {
   const current = await getSettings();
+  const legacyBehavior = typeof patch.floatingAction === 'boolean' ? patch.floatingAction : undefined;
   const next: ExtensionSettings = {
-    floatingAction: typeof patch.floatingAction === 'boolean' ? patch.floatingAction : current.floatingAction,
+    selectionAction: typeof patch.selectionAction === 'boolean'
+      ? patch.selectionAction
+      : legacyBehavior ?? current.selectionAction,
+    doubleClickTranslation: typeof patch.doubleClickTranslation === 'boolean'
+      ? patch.doubleClickTranslation
+      : legacyBehavior ?? current.doubleClickTranslation,
+    autoCloseOnOutsideClick: typeof patch.autoCloseOnOutsideClick === 'boolean'
+      ? patch.autoCloseOnOutsideClick
+      : current.autoCloseOnOutsideClick,
+    popupSize: patch.popupSize === 'small' || patch.popupSize === 'medium' || patch.popupSize === 'large'
+      ? patch.popupSize
+      : current.popupSize,
     autoCloseAfterSave: typeof patch.autoCloseAfterSave === 'boolean' ? patch.autoCloseAfterSave : current.autoCloseAfterSave,
     theme: patch.theme === 'light' || patch.theme === 'dark' ? patch.theme : current.theme,
     onboardingComplete: typeof patch.onboardingComplete === 'boolean' ? patch.onboardingComplete : current.onboardingComplete,
@@ -76,7 +104,8 @@ export async function syncFloatingContentScript(provided?: ExtensionSettings): P
   const settings = provided ?? await getSettings();
   const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [CONTENT_SCRIPT_ID] });
   const hasPermission = await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] });
-  if (settings.floatingAction && hasPermission && registered.length === 0) {
+  const contentBehaviorEnabled = settings.selectionAction || settings.doubleClickTranslation;
+  if (contentBehaviorEnabled && hasPermission && registered.length === 0) {
     await chrome.scripting.registerContentScripts([{
       id: CONTENT_SCRIPT_ID,
       js: ['content.js'],
@@ -84,7 +113,7 @@ export async function syncFloatingContentScript(provided?: ExtensionSettings): P
       runAt: 'document_idle',
       persistAcrossSessions: true
     }]);
-  } else if ((!settings.floatingAction || !hasPermission) && registered.length > 0) {
+  } else if ((!contentBehaviorEnabled || !hasPermission) && registered.length > 0) {
     await chrome.scripting.unregisterContentScripts({ ids: [CONTENT_SCRIPT_ID] });
   }
 }

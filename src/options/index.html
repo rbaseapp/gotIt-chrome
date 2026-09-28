@@ -76,8 +76,24 @@
       <section class="card">
         <h2 data-i18n="options.behaviorTitle">Extension behavior</h2>
         <label class="toggle-row">
-          <span><strong data-i18n="options.floatingTitle">Double-click translation and selection button</strong><small data-i18n="options.floatingDescription">Shows a translation on double-click and a GotIt action beside selected text.</small></span>
-          <input id="floating-action" type="checkbox" role="switch">
+          <span><strong data-i18n="options.selectionActionTitle">Button beside selected text</strong><small data-i18n="options.selectionActionDescription">Shows a GotIt action when you select text.</small></span>
+          <input id="selection-action" type="checkbox" role="switch">
+        </label>
+        <label class="toggle-row">
+          <span><strong data-i18n="options.doubleClickTitle">Instant translation on double-click</strong><small data-i18n="options.doubleClickDescription">Immediately translates a word when you double-click it.</small></span>
+          <input id="double-click-translation" type="checkbox" role="switch">
+        </label>
+        <label class="toggle-row">
+          <span><strong data-i18n="options.autoCloseTitle">Close popup after clicking outside</strong><small data-i18n="options.autoCloseDescription">Automatically closes the translation popup when you click elsewhere on the page.</small></span>
+          <input id="auto-close-outside" type="checkbox" role="switch">
+        </label>
+        <label class="behavior-select">
+          <span><strong data-i18n="options.popupSizeTitle">Popup size</strong><small data-i18n="options.popupSizeDescription">Controls the toolbar popup and the inline translation window.</small></span>
+          <select id="popup-size">
+            <option value="small" data-i18n="options.popupSizeSmall">Small</option>
+            <option value="medium" data-i18n="options.popupSizeMedium">Medium</option>
+            <option value="large" data-i18n="options.popupSizeLarge">Large</option>
+          </select>
         </label>
       </section>
 

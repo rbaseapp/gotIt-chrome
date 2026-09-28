@@ -28,7 +28,8 @@ The extension captures user-selected words and phrases with their page context a
 - `scripting`: temporarily injects the context extractor after a user action.
 - `identity`: obtains a Google OAuth token when the user chooses Google sign-in.
 - Core/GotIt host permissions: authenticate and call the product API.
-- HTTP/HTTPS host permissions: provide the default-on floating selection action and double-click translation; both can be disabled together in settings.
+- HTTP/HTTPS host permissions: provide the default-on floating selection action and double-click translation; each can be disabled independently in settings.
+- Popup behavior: choose a small, medium or large window and optionally close inline translation when clicking elsewhere on the page.
 
 ## Assets still required from publisher
 

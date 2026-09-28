@@ -66,6 +66,9 @@ input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rg
 .theme-toggle-row { margin-top: 16px; }
 .toggle-row span { display: grid; gap: 4px; }
 .toggle-row small { font-weight: 400; color: var(--muted); line-height: 1.45; }
+.behavior-select { display: grid; grid-template-columns: minmax(0, 1fr) 180px; align-items: center; gap: 20px; padding: 15px 0; border-top: 1px solid var(--line); }
+.behavior-select span { display: grid; gap: 4px; }
+.behavior-select small { font-weight: 400; color: var(--muted); line-height: 1.45; }
 input[role="switch"] { appearance: none; width: 44px; height: 24px; border: 0; border-radius: 13px; background: #cbd4cf; padding: 3px; cursor: pointer; transition: .18s ease; }
 input[role="switch"]::after { content: ""; display: block; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); transition: .18s ease; }
 input[role="switch"]:checked { background: var(--green); }
@@ -96,4 +99,4 @@ body.onboarding .card:nth-of-type(2) { border-color: var(--green); box-shadow: 0
 #status.error { background: #b74735; }
 :focus-visible { outline: 3px solid rgba(44,122,98,.22); outline-offset: 2px; }
 @media (max-width: 620px) { header { align-items: flex-start; flex-direction: column; gap: 12px; } .brand-logo { width: 220px; } }
-@media (max-width: 520px) { main { width: min(100% - 20px, 760px); margin-top: 18px; } .card { padding: 18px; } .practice-invite { grid-template-columns: 1fr; gap: 14px; padding: 18px; } .practice-invite a { white-space: normal; } }
+@media (max-width: 520px) { main { width: min(100% - 20px, 760px); margin-top: 18px; } .card { padding: 18px; } .practice-invite { grid-template-columns: 1fr; gap: 14px; padding: 18px; } .practice-invite a { white-space: normal; } .behavior-select { grid-template-columns: 1fr; } }

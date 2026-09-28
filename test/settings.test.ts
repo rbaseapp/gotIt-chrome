@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { defaultSettings, resolveSettings } from '../src/background/settings';
 
-test('floating capture is enabled by default without hiding the saved word automatically', () => {
+test('selection action and double-click translation are independently enabled by default', () => {
   assert.deepEqual(defaultSettings, {
-    floatingAction: true,
+    selectionAction: true,
+    doubleClickTranslation: true,
+    autoCloseOnOutsideClick: false,
+    popupSize: 'medium',
     autoCloseAfterSave: false,
     theme: 'light',
     onboardingComplete: false,
@@ -15,7 +18,10 @@ test('floating capture is enabled by default without hiding the saved word autom
   assert.deepEqual(resolveSettings(undefined), defaultSettings);
   assert.deepEqual(resolveSettings({}), defaultSettings);
   assert.deepEqual(resolveSettings({ floatingAction: false, autoCloseAfterSave: false }), {
-    floatingAction: false,
+    selectionAction: false,
+    doubleClickTranslation: false,
+    autoCloseOnOutsideClick: false,
+    popupSize: 'medium',
     autoCloseAfterSave: false,
     theme: 'light',
     onboardingComplete: false,
@@ -25,6 +31,25 @@ test('floating capture is enabled by default without hiding the saved word autom
   });
 });
 
+test('migrates the legacy combined behavior setting and preserves independent choices', () => {
+  assert.deepEqual(
+    resolveSettings({ floatingAction: false, selectionAction: true }),
+    {
+      ...defaultSettings,
+      selectionAction: true,
+      doubleClickTranslation: false
+    }
+  );
+  assert.deepEqual(
+    resolveSettings({ selectionAction: false, doubleClickTranslation: true }),
+    {
+      ...defaultSettings,
+      selectionAction: false,
+      doubleClickTranslation: true
+    }
+  );
+});
+
 test('resolves first-run language preferences while rejecting invalid language tags', () => {
   assert.deepEqual(resolveSettings({
     onboardingComplete: true,
@@ -32,7 +57,10 @@ test('resolves first-run language preferences while rejecting invalid language t
     defaultTranslationLanguage: 'he',
     languagePreferencesNeedSync: true
   }), {
-    floatingAction: true,
+    selectionAction: true,
+    doubleClickTranslation: true,
+    autoCloseOnOutsideClick: false,
+    popupSize: 'medium',
     autoCloseAfterSave: false,
     theme: 'light',
     onboardingComplete: true,
@@ -46,4 +74,12 @@ test('resolves first-run language preferences while rejecting invalid language t
 test('persists only supported extension themes', () => {
   assert.equal(resolveSettings({ theme: 'dark' }).theme, 'dark');
   assert.equal(resolveSettings({ theme: 'sepia' as never }).theme, 'light');
+});
+
+test('resolves automatic close and one of the three popup sizes', () => {
+  assert.equal(resolveSettings({ autoCloseOnOutsideClick: true }).autoCloseOnOutsideClick, true);
+  assert.equal(resolveSettings({ popupSize: 'small' }).popupSize, 'small');
+  assert.equal(resolveSettings({ popupSize: 'medium' }).popupSize, 'medium');
+  assert.equal(resolveSettings({ popupSize: 'large' }).popupSize, 'large');
+  assert.equal(resolveSettings({ popupSize: 'huge' as never }).popupSize, 'medium');
 });

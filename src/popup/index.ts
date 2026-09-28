@@ -169,6 +169,10 @@ function applyTheme(theme: 'light' | 'dark'): void {
   document.documentElement.dataset.theme = theme;
 }
 
+function applyPopupSize(size: 'small' | 'medium' | 'large'): void {
+  document.documentElement.dataset.popupSize = size;
+}
+
 function canonicalLanguage(value: string): string | null {
   try {
     return Intl.getCanonicalLocales(value.trim())[0] ?? null;
@@ -713,6 +717,7 @@ async function authenticated(nextSession: PublicSession): Promise<void> {
     applyAiTranslationAccess(fresh.billing?.tier === 'paid' && fresh.billing.access);
     extensionSettings = fresh.settings;
     applyTheme(fresh.settings.theme);
+    applyPopupSize(fresh.settings.popupSize);
     sourceLanguage.value = profileSourceLanguage();
     targetLanguage.value = profileTargetLanguage();
     setMethod(effectiveTranslationMethod(profile?.translationMethodPreference));
@@ -732,6 +737,7 @@ async function initialize(): Promise<void> {
     applyAiTranslationAccess(data.billing?.tier === 'paid' && data.billing.access);
     extensionSettings = data.settings;
     applyTheme(data.settings.theme);
+    applyPopupSize(data.settings.popupSize);
     session = data.session;
     if (!session) {
       showView('auth');

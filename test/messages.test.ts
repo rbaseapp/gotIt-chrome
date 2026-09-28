@@ -105,6 +105,37 @@ test('accepts only bright and dark theme settings', () => {
   assert.equal(parseRequest({ type: 'UPDATE_SETTINGS', settings: { theme: 'sepia' } }), null);
 });
 
+test('accepts independent content behavior settings', () => {
+  assert.deepEqual(
+    parseRequest({
+      type: 'UPDATE_SETTINGS',
+      settings: { selectionAction: false, doubleClickTranslation: true }
+    }),
+    {
+      type: 'UPDATE_SETTINGS',
+      settings: { selectionAction: false, doubleClickTranslation: true }
+    }
+  );
+  assert.equal(parseRequest({
+    type: 'UPDATE_SETTINGS',
+    settings: { selectionAction: 'yes' }
+  }), null);
+  assert.deepEqual(
+    parseRequest({
+      type: 'UPDATE_SETTINGS',
+      settings: { autoCloseOnOutsideClick: true, popupSize: 'large' }
+    }),
+    {
+      type: 'UPDATE_SETTINGS',
+      settings: { autoCloseOnOutsideClick: true, popupSize: 'large' }
+    }
+  );
+  assert.equal(parseRequest({
+    type: 'UPDATE_SETTINGS',
+    settings: { popupSize: 'huge' }
+  }), null);
+});
+
 test('accepts only a strictly shaped saved-item update', () => {
   const request = {
     type: 'UPDATE_SAVED_ITEM',

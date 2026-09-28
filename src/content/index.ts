@@ -7,6 +7,7 @@ import type {
   CaptureResult,
   ClientError,
   InlinePreviewResult,
+  PopupSize,
   ResponseEnvelope
 } from '../shared/types';
 
@@ -17,10 +18,16 @@ const state = globalThis as typeof globalThis & {
 if (!state.__gotitContentLoaded) {
   state.__gotitContentLoaded = true;
   let host: HTMLDivElement | null = null;
+  let activePanel: HTMLElement | null = null;
   let hideTimer: number | null = null;
   let preferredTranslationMethod: 'dictionary' | 'ai' = 'dictionary';
   let aiTranslationAvailable = false;
   let preferredTheme: 'light' | 'dark' = 'light';
+  let selectionActionEnabled = false;
+  let doubleClickTranslationEnabled = false;
+  let sharedBehaviorListenersActive = false;
+  let autoCloseOnOutsideClick = false;
+  let preferredPopupSize: PopupSize = 'medium';
 
   const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -29,10 +36,17 @@ if (!state.__gotitContentLoaded) {
     hideTimer = null;
     host?.remove();
     host = null;
+    activePanel = null;
   }
 
   function insideUi(event: Event): boolean {
     return event.target instanceof Node && Boolean(host?.contains(event.target));
+  }
+
+  function popupWidth(size: PopupSize): number {
+    if (size === 'small') return 360;
+    if (size === 'large') return 520;
+    return 430;
   }
 
   function place(rect: DOMRect, width: number, estimatedHeight: number): { left: number; top: number } {
@@ -131,17 +145,20 @@ if (!state.__gotitContentLoaded) {
     host = currentHost;
     currentHost.setAttribute('data-gotit-ui', 'inline-translation');
     currentHost.setAttribute('data-theme', preferredTheme);
+    currentHost.setAttribute('data-popup-size', preferredPopupSize);
     const root = currentHost.attachShadow({ mode: 'closed' });
     const style = document.createElement('style');
     style.textContent = `
-      :host { all: initial; }
+      :host { all: initial; --gotit-panel-width:430px; }
+      :host([data-popup-size="small"]) { --gotit-panel-width:360px; }
+      :host([data-popup-size="large"]) { --gotit-panel-width:520px; }
       .panel {
         --cream:#f6f5f0; --surface:#ffffff; --surface-soft:#fbfbf8; --line:#e6e9e4;
         --text:#24352f; --muted:#74817d; --green:#2c7a62; --green-dark:#1f604c;
         --green-soft:#e6f2ed; --orange:#ef8e62; --orange-soft:#fff0e7;
         --purple:#7a6cb3; --purple-soft:#f0edfa; --blue:#5792a9; --blue-soft:#eaf4f7;
         all:initial; box-sizing:border-box; position:fixed; z-index:2147483647;
-        width:min(430px, calc(100vw - 24px)); max-height:calc(100vh - 16px); direction:${contentDirection}; overflow:auto;
+        width:min(var(--gotit-panel-width), calc(100vw - 24px)); max-height:calc(100vh - 16px); direction:${contentDirection}; overflow:auto;
         border:1px solid var(--line); border-radius:20px; background:var(--cream); color:var(--text);
         box-shadow:0 24px 70px rgba(25,39,34,.22), 0 2px 12px rgba(33,52,46,.08);
         font:14px/1.5 ${font}; color-scheme:light;
@@ -245,10 +262,11 @@ if (!state.__gotitContentLoaded) {
       @media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
     `;
     const panel = document.createElement('section');
+    activePanel = panel;
     panel.className = 'panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', contentT('content.dialogLabel', { term: context.selectedText }));
-    const position = place(rect, Math.min(430, window.innerWidth - 24), 390);
+    const position = place(rect, Math.min(popupWidth(preferredPopupSize), window.innerWidth - 24), 390);
     panel.style.left = `${position.left}px`;
     panel.style.top = `${position.top}px`;
     const head = document.createElement('div');
@@ -908,6 +926,38 @@ if (!state.__gotitContentLoaded) {
     }, 20);
   }
 
+  function handleOutsidePointerDown(event: PointerEvent): void {
+    if (
+      !autoCloseOnOutsideClick ||
+      host?.getAttribute('data-gotit-ui') !== 'inline-translation' ||
+      insideUi(event)
+    ) return;
+    hide();
+  }
+
+  function applyBehavior(selectionAction: boolean, doubleClickTranslation: boolean): void {
+    selectionActionEnabled = selectionAction;
+    doubleClickTranslationEnabled = doubleClickTranslation;
+    document.removeEventListener('mouseup', handleSelection, true);
+    document.removeEventListener('dblclick', handleDoubleClick, true);
+    if (selectionActionEnabled) document.addEventListener('mouseup', handleSelection, true);
+    if (doubleClickTranslationEnabled) document.addEventListener('dblclick', handleDoubleClick, true);
+
+    const anyBehaviorEnabled = selectionActionEnabled || doubleClickTranslationEnabled;
+    if (anyBehaviorEnabled && !sharedBehaviorListenersActive) {
+      document.addEventListener('scroll', hide, true);
+      document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+      window.addEventListener('blur', hide);
+      sharedBehaviorListenersActive = true;
+    } else if (!anyBehaviorEnabled && sharedBehaviorListenersActive) {
+      document.removeEventListener('scroll', hide, true);
+      document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
+      window.removeEventListener('blur', hide);
+      sharedBehaviorListenersActive = false;
+      hide();
+    }
+  }
+
   chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (
       typeof message === 'object' &&
@@ -916,6 +966,41 @@ if (!state.__gotitContentLoaded) {
     ) {
       sendResponse(selectionContext(document));
       return;
+    }
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      (message as { type?: unknown }).type === 'GOTIT_BEHAVIOR_CHANGED'
+    ) {
+      const behavior = message as {
+        selectionAction?: unknown;
+        doubleClickTranslation?: unknown;
+        autoCloseOnOutsideClick?: unknown;
+        popupSize?: unknown;
+      };
+      if (
+        typeof behavior.selectionAction === 'boolean' &&
+        typeof behavior.doubleClickTranslation === 'boolean' &&
+        typeof behavior.autoCloseOnOutsideClick === 'boolean' &&
+        (behavior.popupSize === 'small' || behavior.popupSize === 'medium' || behavior.popupSize === 'large')
+      ) {
+        autoCloseOnOutsideClick = behavior.autoCloseOnOutsideClick;
+        preferredPopupSize = behavior.popupSize;
+        host?.setAttribute('data-popup-size', preferredPopupSize);
+        window.requestAnimationFrame(() => {
+          if (!activePanel) return;
+          const panelRect = activePanel.getBoundingClientRect();
+          activePanel.style.left = `${Math.min(
+            window.innerWidth - panelRect.width - 8,
+            Math.max(8, panelRect.left)
+          )}px`;
+          activePanel.style.top = `${Math.min(
+            window.innerHeight - panelRect.height - 8,
+            Math.max(8, panelRect.top)
+          )}px`;
+        });
+        applyBehavior(behavior.selectionAction, behavior.doubleClickTranslation);
+      }
     }
     if (
       typeof message === 'object' &&
@@ -935,22 +1020,24 @@ if (!state.__gotitContentLoaded) {
     .then(
       (
         response: ResponseEnvelope<{
-          floatingAction: boolean;
+          selectionAction: boolean;
+          doubleClickTranslation: boolean;
+          autoCloseOnOutsideClick: boolean;
+          popupSize: PopupSize;
           translationMethod: 'dictionary' | 'ai';
           aiTranslationAvailable: boolean;
           uiLocale: 'en' | 'he';
           theme: 'light' | 'dark';
         }>
       ) => {
-        if (!response.ok || !response.data.floatingAction) return;
+        if (!response.ok) return;
         setContentLocale(response.data.uiLocale);
         aiTranslationAvailable = response.data.aiTranslationAvailable;
         preferredTranslationMethod = response.data.translationMethod;
         preferredTheme = response.data.theme;
-        document.addEventListener('mouseup', handleSelection, true);
-        document.addEventListener('dblclick', handleDoubleClick, true);
-        document.addEventListener('scroll', hide, true);
-        window.addEventListener('blur', hide);
+        autoCloseOnOutsideClick = response.data.autoCloseOnOutsideClick;
+        preferredPopupSize = response.data.popupSize;
+        applyBehavior(response.data.selectionAction, response.data.doubleClickTranslation);
       }
     )
     .catch(() => undefined);

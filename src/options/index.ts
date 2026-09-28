@@ -23,13 +23,17 @@ const targetLanguage = element<HTMLSelectElement>('target-language');
 const method = element<HTMLSelectElement>('translation-method');
 const aiMethod = method.querySelector<HTMLOptionElement>('option[value="ai"]')!;
 const aiPaidNote = element<HTMLElement>('ai-paid-note');
-const floating = element<HTMLInputElement>('floating-action');
+const selectionAction = element<HTMLInputElement>('selection-action');
+const doubleClickTranslation = element<HTMLInputElement>('double-click-translation');
+const autoCloseOutside = element<HTMLInputElement>('auto-close-outside');
+const popupSize = element<HTMLSelectElement>('popup-size');
 const darkMode = element<HTMLInputElement>('dark-mode');
 const themeMode = element<HTMLElement>('theme-mode');
 const uiLanguage = element<HTMLSelectElement>('ui-language');
 const status = element<HTMLElement>('status');
 let statusTimer: number | null = null;
 let signedIn = false;
+let currentPopupSize: 'small' | 'medium' | 'large' = 'medium';
 
 async function request<K extends keyof ResponseMap>(
   value: Extract<ExtensionRequest, { type: K }>
@@ -70,7 +74,11 @@ async function initialize(): Promise<void> {
     uiLanguage.value = await getUiLocalePreference();
     const data = await request({ type: 'GET_BOOTSTRAP' });
     signedIn = Boolean(data.session);
-    floating.checked = data.settings.floatingAction;
+    selectionAction.checked = data.settings.selectionAction;
+    doubleClickTranslation.checked = data.settings.doubleClickTranslation;
+    autoCloseOutside.checked = data.settings.autoCloseOnOutsideClick;
+    currentPopupSize = data.settings.popupSize;
+    popupSize.value = currentPopupSize;
     applyTheme(data.settings.theme);
     sourceLanguage.value = data.profile?.defaultSourceLanguage
       ?? data.settings.defaultSourceLanguage
@@ -137,14 +145,36 @@ if (new URLSearchParams(window.location.search).get('onboarding') === '1') {
   element<HTMLElement>('onboarding-notice').hidden = false;
 }
 
-floating.addEventListener('change', () => {
-  const desired = floating.checked;
-  floating.disabled = true;
+function saveBehaviorSetting(
+  input: HTMLInputElement,
+  setting: 'selectionAction' | 'doubleClickTranslation' | 'autoCloseOnOutsideClick'
+): void {
+  const desired = input.checked;
+  input.disabled = true;
   void (async () => {
-    await request({ type: 'UPDATE_SETTINGS', settings: { floatingAction: desired } });
-    notify(desired ? t('options.enabled') : t('options.disabled'));
-  })().catch((error: unknown) => { floating.checked = !desired; notify(message(error), true); })
-    .finally(() => { floating.disabled = false; });
+    await request({ type: 'UPDATE_SETTINGS', settings: { [setting]: desired } });
+    notify(t('options.behaviorSaved'));
+  })().catch((error: unknown) => { input.checked = !desired; notify(message(error), true); })
+    .finally(() => { input.disabled = false; });
+}
+
+selectionAction.addEventListener('change', () => saveBehaviorSetting(selectionAction, 'selectionAction'));
+doubleClickTranslation.addEventListener('change', () => saveBehaviorSetting(doubleClickTranslation, 'doubleClickTranslation'));
+autoCloseOutside.addEventListener('change', () => saveBehaviorSetting(autoCloseOutside, 'autoCloseOnOutsideClick'));
+
+popupSize.addEventListener('change', () => {
+  const desired = popupSize.value as 'small' | 'medium' | 'large';
+  popupSize.disabled = true;
+  void request({ type: 'UPDATE_SETTINGS', settings: { popupSize: desired } })
+    .then(() => {
+      currentPopupSize = desired;
+      notify(t('options.behaviorSaved'));
+    })
+    .catch((error: unknown) => {
+      popupSize.value = currentPopupSize;
+      notify(message(error), true);
+    })
+    .finally(() => { popupSize.disabled = false; });
 });
 
 darkMode.addEventListener('change', () => {

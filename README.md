@@ -9,7 +9,8 @@ Production-oriented Manifest V3 client for capturing a word or phrase together w
 - Rotating Core refresh session with access tokens kept in `chrome.storage.session`.
 - Right-click **Save to GotIt** capture using `activeTab` and temporary script injection.
 - Manual popup capture and active-page selection capture.
-- Instant double-click translation with separate quick-save and review actions, plus a floating action beside selected text; enabled by default and independently switchable in settings.
+- Instant double-click translation with separate quick-save and review actions, plus a floating action beside selected text; each behavior is enabled by default and can be switched independently in settings.
+- Configurable small, medium or large popup sizing for both the toolbar popup and inline translation, with optional close-on-outside-click behavior.
 - Sentence, title, URL, language hint and timestamp extraction without sending page HTML.
 - Server preview using `auto`, `dictionary` or `ai`; no direct provider requests.
 - Source and translation shown prominently as read-only by default with explicit editing, inline item-type/part-of-speech details, a concise AI explanation, provider candidates and pronunciation playback.
@@ -34,9 +35,9 @@ npm run verify
 npm run package
 ```
 
-The unpacked extension is generated in `dist/`. The versioned Web Store ZIP is generated in `artifacts/`.
+The unpacked extension is generated in `dist/`. It always keeps the committed public key so rebuilding cannot change its extension ID, authentication storage or allowlisted CORS origin. The versioned Web Store ZIP is generated in isolated staging under `artifacts/` and intentionally omits that key.
 
-Unpacked builds use the committed public key in `scripts/extension-identity.mjs`, so their development extension ID is stable across computers and directories:
+Unpacked builds use the committed public key in `scripts/extension-identity.mjs`, so their development extension ID is stable across modes, computers and directories. Web Store ZIPs omit the manifest `key` field because the store owns their production identity:
 
 ```text
 coeeepgmiclcodbjgkimefabjedbkjpp
@@ -52,9 +53,9 @@ Public build settings can be overridden with `CORE_API_BASE`, `GOTIT_API_BASE` a
 
 ## Chrome Web Store release prerequisites
 
-1. Upload a draft to obtain the permanent Chrome Web Store item ID; publishing is not required.
-2. In the draft's **Package** tab, choose **View public key**, replace the development key and ID in `scripts/extension-identity.mjs`, rebuild, and confirm the generated extension ID matches the store item ID.
-3. Configure that permanent ID in Google Cloud as a Chrome Extension OAuth client and provide the public client ID during the final build.
+1. Run `npm run package`. This always rebuilds production, verifies that `manifest.key` is absent, and creates the upload ZIP in `artifacts/`.
+2. Upload the ZIP as a draft to obtain the permanent Chrome Web Store item ID; publishing is not required. The Web Store owns the production extension identity, so do not add its public key to the uploaded manifest.
+3. Configure that permanent item ID in Google Cloud as a Chrome Extension OAuth client and provide the public client ID through `GOOGLE_OAUTH_CLIENT_ID` during the final build.
 4. Register the same OAuth client ID in the production Core database for application `gotit` with client type `chrome_extension`, then verify `/auth/google/access-token`. CORS configuration does not perform this registration. Using the Core administration script with production database credentials:
 
    ```powershell

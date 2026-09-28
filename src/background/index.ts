@@ -249,7 +249,10 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
       : [null, null];
     const aiTranslationAvailable = billing?.tier === 'paid' && billing.access;
     return {
-      floatingAction: settings.floatingAction,
+      selectionAction: settings.selectionAction,
+      doubleClickTranslation: settings.doubleClickTranslation,
+      autoCloseOnOutsideClick: settings.autoCloseOnOutsideClick,
+      popupSize: settings.popupSize,
       translationMethod: aiTranslationAvailable
         ? effectiveTranslationMethod(profile?.translationMethodPreference)
         : 'dictionary',
@@ -273,6 +276,31 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     case 'GET_SETTINGS': return getSettings();
     case 'UPDATE_SETTINGS': {
       const settings = await updateSettings(request.settings);
+      if (
+        request.settings.selectionAction !== undefined ||
+        request.settings.doubleClickTranslation !== undefined ||
+        request.settings.autoCloseOnOutsideClick !== undefined ||
+        request.settings.popupSize !== undefined ||
+        request.settings.floatingAction !== undefined
+      ) {
+        const tabs = await chrome.tabs.query({});
+        const enabled = settings.selectionAction || settings.doubleClickTranslation;
+        await Promise.allSettled(tabs.flatMap((tab) => {
+          if (tab.id === undefined || !/^https?:\/\//u.test(tab.url ?? '')) return [];
+          return [(async () => {
+            if (enabled) {
+              await chrome.scripting.executeScript({ target: { tabId: tab.id! }, files: ['content.js'] });
+            }
+            await chrome.tabs.sendMessage(tab.id!, {
+              type: 'GOTIT_BEHAVIOR_CHANGED',
+              selectionAction: settings.selectionAction,
+              doubleClickTranslation: settings.doubleClickTranslation,
+              autoCloseOnOutsideClick: settings.autoCloseOnOutsideClick,
+              popupSize: settings.popupSize
+            });
+          })()];
+        }));
+      }
       if (request.settings.theme !== undefined) {
         const tabs = await chrome.tabs.query({});
         await Promise.allSettled(tabs.flatMap((tab) => tab.id === undefined
