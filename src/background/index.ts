@@ -6,6 +6,7 @@ import type {
   CapturePreview,
   CaptureSaveInput,
   ClientError,
+  ExtensionSettings,
   ResponseEnvelope
 } from '../shared/types';
 import { getProfile, patchProfile, previewCapture, removeSavedItem, saveCapture, updateSavedItem } from './api';
@@ -193,6 +194,40 @@ async function bootstrap() {
   return { session, billing, profile, settings, pendingCapture };
 }
 
+async function applySettingsToOpenTabs(patch: Partial<ExtensionSettings>): Promise<void> {
+  const behaviorChanged = patch.selectionAction !== undefined ||
+    patch.doubleClickTranslation !== undefined ||
+    patch.autoCloseOnOutsideClick !== undefined ||
+    patch.popupSize !== undefined ||
+    patch.floatingAction !== undefined;
+  const themeChanged = patch.theme !== undefined;
+  if (!behaviorChanged && !themeChanged) return;
+
+  const tabs = await chrome.tabs.query({});
+  await Promise.allSettled(tabs.map(async (tab) => {
+    if (tab.id === undefined || tab.discarded || !/^https?:\/\//u.test(tab.url ?? '')) return;
+    let settings = await getSettings();
+    if (behaviorChanged) {
+      if (settings.selectionAction || settings.doubleClickTranslation) {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
+        // Injection can be delayed while a tab loads. Send the latest persisted
+        // values so an older save cannot overwrite a newer one in that tab.
+        settings = await getSettings();
+      }
+      await chrome.tabs.sendMessage(tab.id, {
+        type: 'GOTIT_BEHAVIOR_CHANGED',
+        selectionAction: settings.selectionAction,
+        doubleClickTranslation: settings.doubleClickTranslation,
+        autoCloseOnOutsideClick: settings.autoCloseOnOutsideClick,
+        popupSize: settings.popupSize
+      });
+    }
+    if (themeChanged) {
+      await chrome.tabs.sendMessage(tab.id, { type: 'GOTIT_THEME_CHANGED', theme: settings.theme });
+    }
+  }));
+}
+
 async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Promise<unknown> {
   const request = parseRequest(raw);
   if (!request) throw new RequestError('INVALID_MESSAGE', 'Invalid extension message', 400);
@@ -276,37 +311,10 @@ async function dispatch(raw: unknown, sender: chrome.runtime.MessageSender): Pro
     case 'GET_SETTINGS': return getSettings();
     case 'UPDATE_SETTINGS': {
       const settings = await updateSettings(request.settings);
-      if (
-        request.settings.selectionAction !== undefined ||
-        request.settings.doubleClickTranslation !== undefined ||
-        request.settings.autoCloseOnOutsideClick !== undefined ||
-        request.settings.popupSize !== undefined ||
-        request.settings.floatingAction !== undefined
-      ) {
-        const tabs = await chrome.tabs.query({});
-        const enabled = settings.selectionAction || settings.doubleClickTranslation;
-        await Promise.allSettled(tabs.flatMap((tab) => {
-          if (tab.id === undefined || !/^https?:\/\//u.test(tab.url ?? '')) return [];
-          return [(async () => {
-            if (enabled) {
-              await chrome.scripting.executeScript({ target: { tabId: tab.id! }, files: ['content.js'] });
-            }
-            await chrome.tabs.sendMessage(tab.id!, {
-              type: 'GOTIT_BEHAVIOR_CHANGED',
-              selectionAction: settings.selectionAction,
-              doubleClickTranslation: settings.doubleClickTranslation,
-              autoCloseOnOutsideClick: settings.autoCloseOnOutsideClick,
-              popupSize: settings.popupSize
-            });
-          })()];
-        }));
-      }
-      if (request.settings.theme !== undefined) {
-        const tabs = await chrome.tabs.query({});
-        await Promise.allSettled(tabs.flatMap((tab) => tab.id === undefined
-          ? []
-          : [chrome.tabs.sendMessage(tab.id, { type: 'GOTIT_THEME_CHANGED', theme: settings.theme })]));
-      }
+      // A slow or suspended tab must not keep the settings controls disabled.
+      void applySettingsToOpenTabs(request.settings).catch((error: unknown) => {
+        console.warn('Could not apply GotIt settings to open tabs', error);
+      });
       return settings;
     }
   }

@@ -2,6 +2,8 @@ import type { ExtensionSettings } from '../shared/types';
 
 const SETTINGS_KEY = 'gotit.settings.v1';
 const CONTENT_SCRIPT_ID = 'gotit-floating-action';
+let pendingSettingsUpdate: Promise<unknown> = Promise.resolve();
+let pendingContentScriptSync: Promise<void> = Promise.resolve();
 
 export const defaultSettings: ExtensionSettings = {
   selectionAction: true,
@@ -66,7 +68,15 @@ export async function getSettings(): Promise<ExtensionSettings> {
   return resolveSettings(stored[SETTINGS_KEY]);
 }
 
-export async function updateSettings(patch: Partial<ExtensionSettings>): Promise<ExtensionSettings> {
+export function updateSettings(patch: Partial<ExtensionSettings>): Promise<ExtensionSettings> {
+  // Each patch must read the result of the previous write, including requests
+  // from other extension pages and profile synchronization.
+  const update = pendingSettingsUpdate.then(() => persistSettings(patch));
+  pendingSettingsUpdate = update.catch(() => undefined);
+  return update;
+}
+
+async function persistSettings(patch: Partial<ExtensionSettings>): Promise<ExtensionSettings> {
   const current = await getSettings();
   const legacyBehavior = typeof patch.floatingAction === 'boolean' ? patch.floatingAction : undefined;
   const next: ExtensionSettings = {
@@ -96,12 +106,22 @@ export async function updateSettings(patch: Partial<ExtensionSettings>): Promise
       : current.languagePreferencesNeedSync
   };
   await chrome.storage.local.set({ [SETTINGS_KEY]: next });
-  await syncFloatingContentScript(next);
+  // A browser-side activation failure must not turn a successful save into an
+  // error that causes the options page to revert an already persisted value.
+  void syncFloatingContentScript().catch((error: unknown) => {
+    console.warn('Could not synchronize GotIt content script registration', error);
+  });
   return next;
 }
 
-export async function syncFloatingContentScript(provided?: ExtensionSettings): Promise<void> {
-  const settings = provided ?? await getSettings();
+export function syncFloatingContentScript(): Promise<void> {
+  const sync = pendingContentScriptSync.then(updateContentScriptRegistration);
+  pendingContentScriptSync = sync.catch(() => undefined);
+  return sync;
+}
+
+async function updateContentScriptRegistration(): Promise<void> {
+  const settings = await getSettings();
   const registered = await chrome.scripting.getRegisteredContentScripts({ ids: [CONTENT_SCRIPT_ID] });
   const hasPermission = await chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] });
   const contentBehaviorEnabled = settings.selectionAction || settings.doubleClickTranslation;

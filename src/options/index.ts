@@ -69,17 +69,28 @@ function applyTheme(theme: 'light' | 'dark'): void {
   themeMode.textContent = t(theme === 'dark' ? 'options.darkMode' : 'options.brightMode');
 }
 
+async function initializeSettings(): Promise<void> {
+  try {
+    const settings = await request({ type: 'GET_SETTINGS' });
+    selectionAction.checked = settings.selectionAction;
+    doubleClickTranslation.checked = settings.doubleClickTranslation;
+    autoCloseOutside.checked = settings.autoCloseOnOutsideClick;
+    currentPopupSize = settings.popupSize;
+    popupSize.value = currentPopupSize;
+    applyTheme(settings.theme);
+    for (const control of [selectionAction, doubleClickTranslation, autoCloseOutside, popupSize, darkMode]) {
+      control.disabled = false;
+    }
+  } catch (error) {
+    notify(message(error), true);
+  }
+}
+
 async function initialize(): Promise<void> {
   try {
     uiLanguage.value = await getUiLocalePreference();
     const data = await request({ type: 'GET_BOOTSTRAP' });
     signedIn = Boolean(data.session);
-    selectionAction.checked = data.settings.selectionAction;
-    doubleClickTranslation.checked = data.settings.doubleClickTranslation;
-    autoCloseOutside.checked = data.settings.autoCloseOnOutsideClick;
-    currentPopupSize = data.settings.popupSize;
-    popupSize.value = currentPopupSize;
-    applyTheme(data.settings.theme);
     sourceLanguage.value = data.profile?.defaultSourceLanguage
       ?? data.settings.defaultSourceLanguage
       ?? 'en';
@@ -198,4 +209,5 @@ uiLanguage.addEventListener('change', () => {
     .finally(() => { uiLanguage.disabled = false; });
 });
 
+void initializeSettings();
 void initialize();

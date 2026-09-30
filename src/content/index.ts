@@ -28,6 +28,8 @@ if (!state.__gotitContentLoaded) {
   let sharedBehaviorListenersActive = false;
   let autoCloseOnOutsideClick = false;
   let preferredPopupSize: PopupSize = 'medium';
+  let behaviorChangedSinceLoad = false;
+  let themeChangedSinceLoad = false;
 
   const font = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -984,6 +986,7 @@ if (!state.__gotitContentLoaded) {
         typeof behavior.autoCloseOnOutsideClick === 'boolean' &&
         (behavior.popupSize === 'small' || behavior.popupSize === 'medium' || behavior.popupSize === 'large')
       ) {
+        behaviorChangedSinceLoad = true;
         autoCloseOnOutsideClick = behavior.autoCloseOnOutsideClick;
         preferredPopupSize = behavior.popupSize;
         host?.setAttribute('data-popup-size', preferredPopupSize);
@@ -1009,6 +1012,7 @@ if (!state.__gotitContentLoaded) {
     ) {
       const theme = (message as { theme?: unknown }).theme;
       if (theme === 'light' || theme === 'dark') {
+        themeChangedSinceLoad = true;
         preferredTheme = theme;
         host?.setAttribute('data-theme', theme);
       }
@@ -1034,10 +1038,12 @@ if (!state.__gotitContentLoaded) {
         setContentLocale(response.data.uiLocale);
         aiTranslationAvailable = response.data.aiTranslationAvailable;
         preferredTranslationMethod = response.data.translationMethod;
-        preferredTheme = response.data.theme;
-        autoCloseOnOutsideClick = response.data.autoCloseOnOutsideClick;
-        preferredPopupSize = response.data.popupSize;
-        applyBehavior(response.data.selectionAction, response.data.doubleClickTranslation);
+        if (!themeChangedSinceLoad) preferredTheme = response.data.theme;
+        if (!behaviorChangedSinceLoad) {
+          autoCloseOnOutsideClick = response.data.autoCloseOnOutsideClick;
+          preferredPopupSize = response.data.popupSize;
+          applyBehavior(response.data.selectionAction, response.data.doubleClickTranslation);
+        }
       }
     )
     .catch(() => undefined);
