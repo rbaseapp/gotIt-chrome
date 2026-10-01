@@ -35,7 +35,7 @@ npm run verify
 npm run package
 ```
 
-The unpacked extension is generated in `dist/`. It always keeps the committed public key so rebuilding cannot change its extension ID, authentication storage or allowlisted CORS origin. The versioned Web Store ZIP is generated in isolated staging under `artifacts/` and intentionally omits that key.
+The unpacked extension is generated in `dist/`. It always keeps the committed public key so rebuilding cannot change its extension ID, authentication storage or allowlisted CORS origin. Never ZIP or upload `dist/` to the Chrome Web Store. The versioned `artifacts/gotit-chrome-WEBSTORE-v<version>.zip` is generated in isolated staging and omits that key. Packaging checks the manifest inside the final ZIP before reporting success.
 
 Unpacked builds use the committed public key in `scripts/extension-identity.mjs`, so their development extension ID is stable across modes, computers and directories. Web Store ZIPs omit the manifest `key` field because the store owns their production identity:
 
@@ -53,8 +53,8 @@ Public build settings can be overridden with `CORE_API_BASE`, `GOTIT_API_BASE` a
 
 ## Chrome Web Store release prerequisites
 
-1. Run `npm run package`. This always rebuilds production, verifies that `manifest.key` is absent, and creates the upload ZIP in `artifacts/`.
-2. Upload the ZIP as a draft to obtain the permanent Chrome Web Store item ID; publishing is not required. The Web Store owns the production extension identity, so do not add its public key to the uploaded manifest.
+1. Run `npm run package`. This always rebuilds production, verifies that `manifest.key` is absent from the final archive, and creates `artifacts/gotit-chrome-WEBSTORE-v<version>.zip`. Upload only that ZIP to the existing Web Store item; never upload `dist/` or a manually created ZIP of it.
+2. For a first release only, upload the ZIP as a draft to obtain the permanent Chrome Web Store item ID; publishing is not required. For updates, upload to that existing item. The Web Store owns the production extension identity, so do not add its public key to the uploaded manifest.
 3. Configure that permanent item ID in Google Cloud as a Chrome Extension OAuth client and provide the public client ID through `GOOGLE_OAUTH_CLIENT_ID` during the final build.
 4. Register the same OAuth client ID in the production Core database for application `gotit` with client type `chrome_extension`, then verify `/auth/google/access-token`. CORS configuration does not perform this registration. Using the Core administration script with production database credentials:
 
