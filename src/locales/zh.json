@@ -150,7 +150,8 @@
     "creatingAccount": "创建账户中…",
     "connecting": "连接中…",
     "reading": "读取中…",
-    "noSelection": "页面上未找到选定内容。您可以手动输入。"
+    "noSelection": "页面上未找到选定内容。您可以手动输入。",
+    "forgotPassword": "忘记密码？"
   },
   "language": {
     "automaticGoogle": "自动检测 (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "保存暂时不可用。您可以安全地重试。",
     "INVALID_MESSAGE": "扩展程序请求无效。",
     "GOOGLE_IDENTITY_FAILED": "Chrome 无法打开 Google 登录：{{message}}",
-    "unknown": "出现错误。请重试。"
+    "unknown": "出现错误。请重试。",
+    "EMAIL_VERIFICATION_REQUIRED": "请先在GotIt网站验证邮箱，然后在此登录。"
   }
 }

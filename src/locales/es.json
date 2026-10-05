@@ -150,7 +150,8 @@
     "creatingAccount": "Creando cuenta…",
     "connecting": "Conectando…",
     "reading": "Leyendo…",
-    "noSelection": "No se encontró selección en la página. Puedes escribirla manualmente."
+    "noSelection": "No se encontró selección en la página. Puedes escribirla manualmente.",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
   },
   "language": {
     "automaticGoogle": "Detección automática (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "Guardar no está disponible temporalmente. Puedes intentar de nuevo sin riesgo.",
     "INVALID_MESSAGE": "La solicitud de la extensión no es válida.",
     "GOOGLE_IDENTITY_FAILED": "Chrome no pudo abrir el inicio de sesión con Google: {{message}}",
-    "unknown": "Algo salió mal. Intenta de nuevo."
+    "unknown": "Algo salió mal. Intenta de nuevo.",
+    "EMAIL_VERIFICATION_REQUIRED": "Verifica tu correo en el sitio de GotIt y después inicia sesión aquí."
   }
 }

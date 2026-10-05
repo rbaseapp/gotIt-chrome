@@ -150,7 +150,8 @@
     "creatingAccount": "יוצר חשבון…",
     "connecting": "מתחבר…",
     "reading": "קורא…",
-    "noSelection": "לא נמצא סימון בעמוד. אפשר להקליד ידנית."
+    "noSelection": "לא נמצא סימון בעמוד. אפשר להקליד ידנית.",
+    "forgotPassword": "שכחתי סיסמה"
   },
   "language": {
     "automaticGoogle": "זיהוי אוטומטי (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "השמירה אינה זמינה כרגע. אפשר לנסות שוב בבטחה.",
     "INVALID_MESSAGE": "הבקשה מהתוסף אינה תקינה.",
     "GOOGLE_IDENTITY_FAILED": "Chrome לא הצליח לפתוח התחברות Google: {{message}}",
-    "unknown": "משהו לא הסתדר. נסה שוב."
+    "unknown": "משהו לא הסתדר. נסה שוב.",
+    "EMAIL_VERIFICATION_REQUIRED": "יש להשלים אימות אימייל באתר GotIt ואז להיכנס כאן."
   }
 }

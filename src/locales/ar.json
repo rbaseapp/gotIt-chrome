@@ -150,7 +150,8 @@
     "creatingAccount": "جاري إنشاء الحساب…",
     "connecting": "جاري الاتصال…",
     "reading": "جاري القراءة…",
-    "noSelection": "لم يتم العثور على تحديد على الصفحة. يمكنك كتابته يدويًا."
+    "noSelection": "لم يتم العثور على تحديد على الصفحة. يمكنك كتابته يدويًا.",
+    "forgotPassword": "نسيت كلمة المرور؟"
   },
   "language": {
     "automaticGoogle": "الكشف التلقائي (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "الحفظ غير متاح مؤقتاً. يمكنك المحاولة مرة أخرى بأمان.",
     "INVALID_MESSAGE": "طلب الملحق غير صحيح.",
     "GOOGLE_IDENTITY_FAILED": "لم يتمكن Chrome من فتح تسجيل الدخول عبر Google: {{message}}",
-    "unknown": "حدث خطأ ما. حاول مرة أخرى."
+    "unknown": "حدث خطأ ما. حاول مرة أخرى.",
+    "EMAIL_VERIFICATION_REQUIRED": "أكمل تأكيد البريد في موقع GotIt ثم سجّل الدخول هنا."
   }
 }

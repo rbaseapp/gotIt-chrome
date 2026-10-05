@@ -150,7 +150,8 @@
     "creatingAccount": "Création du compte en cours…",
     "connecting": "Connexion en cours…",
     "reading": "Lecture en cours…",
-    "noSelection": "Aucune sélection trouvée sur la page. Vous pouvez la saisir manuellement."
+    "noSelection": "Aucune sélection trouvée sur la page. Vous pouvez la saisir manuellement.",
+    "forgotPassword": "Mot de passe oublié ?"
   },
   "language": {
     "automaticGoogle": "Détection automatique (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "L'enregistrement est temporairement indisponible. Vous pouvez réessayer en toute sécurité.",
     "INVALID_MESSAGE": "La demande de l'extension n'est pas valide.",
     "GOOGLE_IDENTITY_FAILED": "Chrome n'a pas pu ouvrir la connexion Google : {{message}}",
-    "unknown": "Une erreur est survenue. Réessayez."
+    "unknown": "Une erreur est survenue. Réessayez.",
+    "EMAIL_VERIFICATION_REQUIRED": "Vérifiez votre e-mail sur le site GotIt, puis connectez-vous ici."
   }
 }

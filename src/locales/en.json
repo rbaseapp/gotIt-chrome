@@ -150,7 +150,8 @@
     "creatingAccount": "Creating account…",
     "connecting": "Connecting…",
     "reading": "Reading…",
-    "noSelection": "No selection was found on the page. You can type it manually."
+    "noSelection": "No selection was found on the page. You can type it manually.",
+    "forgotPassword": "Forgot password?"
   },
   "language": {
     "automaticGoogle": "Automatic detection (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "Saving is temporarily unavailable. You can safely try again.",
     "INVALID_MESSAGE": "The extension request is invalid.",
     "GOOGLE_IDENTITY_FAILED": "Chrome could not open Google sign-in: {{message}}",
-    "unknown": "Something went wrong. Try again."
+    "unknown": "Something went wrong. Try again.",
+    "EMAIL_VERIFICATION_REQUIRED": "Complete email verification on the GotIt website, then sign in here."
   }
 }

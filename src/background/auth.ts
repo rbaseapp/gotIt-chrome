@@ -186,6 +186,7 @@ export async function getPublicSession(): Promise<PublicSession | null> {
 }
 
 export async function signInWithEmail(mode: 'login' | 'register', email: string, password: string): Promise<PublicSession> {
+  if (mode === 'register') throw new RequestError('EMAIL_VERIFICATION_REQUIRED', 'Complete registration on the GotIt website');
   const payload = await corePost(`/auth/${mode}`, { email, password });
   return storeAuth(parseAuthResult(payload));
 }

@@ -68,6 +68,18 @@ Public build settings can be overridden with `CORE_API_BASE`, `GOTIT_API_BASE` a
 
 The default production endpoints are the endpoints already used by the prototype. Verify them against the actual Render services before publishing.
 
+### Email verification and recovery (1.4.5)
+
+Register opens `https://gotit.rbaseapp.com/?auth=register`; Forgot password opens
+`https://gotit.rbaseapp.com/?auth=reset`. Complete the emailed code and password
+confirmation on the Web, then sign into the extension. Registration no longer creates
+an extension session directly. Legacy internal registration messages fail before any
+network call, so a Core 202 challenge cannot be mistaken for authentication.
+Existing unverified accounts receive a localized instruction to verify on the Web.
+No permissions were added. `npm run verify` passes 41 tests and package validation;
+`npm run package` produces the keyless 1.4.5 Store archive. Store publication is a
+separate release step; archive creation does not prove Store availability.
+
 ### Translation provider configuration
 
 Google OAuth authenticates users only; it does not authorize Cloud Translation. For automatic `auto`/`dictionary` previews, configure these variables only on the GotIt backend service in Render:

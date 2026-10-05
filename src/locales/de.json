@@ -150,7 +150,8 @@
     "creatingAccount": "Konto wird erstellt…",
     "connecting": "Wird verbunden…",
     "reading": "Wird gelesen…",
-    "noSelection": "Keine Auswahl auf der Seite gefunden. Du kannst es manuell eingeben."
+    "noSelection": "Keine Auswahl auf der Seite gefunden. Du kannst es manuell eingeben.",
+    "forgotPassword": "Passwort vergessen?"
   },
   "language": {
     "automaticGoogle": "Automatische Erkennung (Google)"
@@ -256,6 +257,7 @@
     "CAPTURE_TEMPORARILY_UNAVAILABLE": "Speichern ist vorübergehend nicht verfügbar. Sie können es bedenkenlos erneut versuchen.",
     "INVALID_MESSAGE": "Die Erweiterungsanfrage ist ungültig.",
     "GOOGLE_IDENTITY_FAILED": "Chrome konnte Google-Anmeldung nicht öffnen: {{message}}",
-    "unknown": "Etwas ist schief gelaufen. Versuchen Sie es erneut."
+    "unknown": "Etwas ist schief gelaufen. Versuchen Sie es erneut.",
+    "EMAIL_VERIFICATION_REQUIRED": "Bestätige deine E-Mail auf der GotIt-Website und melde dich dann hier an."
   }
 }
