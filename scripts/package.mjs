@@ -13,6 +13,7 @@ const staging = path.join(artifactDir, `.webstore-build-v${packageMetadata.versi
 const packageEnv = {
   ...process.env,
   BUILD_MODE: 'production',
+  BUILD_TARGET: 'production',
   BUILD_OUTPUT_DIR: staging,
   WEBSTORE_PACKAGE: '1'
 };

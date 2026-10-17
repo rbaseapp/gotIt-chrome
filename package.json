@@ -11,8 +11,10 @@
     "clean": "node scripts/clean.mjs",
     "build": "node scripts/build.mjs",
     "build:dev": "cross-env BUILD_MODE=development node scripts/build.mjs",
+    "build:dev-hosted": "cross-env BUILD_TARGET=dev BUILD_OUTPUT_DIR=dist-dev node scripts/build.mjs",
+    "verify:dev-hosted": "npm run typecheck && npm test && npm run build:dev-hosted && cross-env BUILD_TARGET=dev BUILD_OUTPUT_DIR=dist-dev node scripts/verify-build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts",
+    "test": "node --import tsx --test test/*.test.ts test/*.test.mjs",
     "verify": "npm run typecheck && npm test && npm run build && node scripts/verify-build.mjs",
     "package": "node scripts/package.mjs"
   },

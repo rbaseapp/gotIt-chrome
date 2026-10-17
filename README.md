@@ -51,6 +51,21 @@ npm run build:dev
 
 Public build settings can be overridden with `CORE_API_BASE`, `GOTIT_API_BASE` and `GOOGLE_OAUTH_CLIENT_ID`. Do not pass provider secrets to this build.
 
+For the hosted DEV website, use the separate DEV output:
+
+```powershell
+npm run verify:dev-hosted
+```
+
+Load `dist-dev/` as an unpacked extension. This build signs in through
+`https://rbase-dev-core-platforms.onrender.com`, saves captures through
+`https://gotit-dev-backend.onrender.com`, and opens `https://gotit-dev.rbaseapp.com`
+for practice, registration and password recovery. The build rejects production
+endpoint overrides and verifies that the package contains no production destinations.
+It does not replace `dist/` or publish a Store update. The Store extension uses the
+production services; DEV and production libraries are separate and this build does
+not migrate previously saved words. Sign in with the DEV account in the DEV extension.
+
 ## Chrome Web Store release prerequisites
 
 1. Run `npm run package`. This always rebuilds production, verifies that `manifest.key` is absent from the final archive, and creates `artifacts/gotit-chrome-WEBSTORE-v<version>.zip`. Upload only that ZIP to the existing Web Store item; never upload `dist/` or a manually created ZIP of it.

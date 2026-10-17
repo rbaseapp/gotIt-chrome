@@ -13,6 +13,6 @@ test('legacy registration messages cannot treat a pending email challenge as a s
 test('popup exposes website verification and recovery without passing email or passwords in URLs', () => {
   const html = readFileSync(new URL('../src/popup/index.html', import.meta.url), 'utf8');
   const script = readFileSync(new URL('../src/popup/index.ts', import.meta.url), 'utf8');
-  assert.match(html, /href="https:\/\/gotit\.rbaseapp\.com\/\?auth=reset"/);
-  assert.match(script, /chrome\.tabs\.create\(\{ url: 'https:\/\/gotit\.rbaseapp\.com\/\?auth=register' \}\)/);
+  assert.match(html, /href="__WEB_APP_BASE__\/\?auth=reset"/);
+  assert.match(script, /chrome\.tabs\.create\(\{ url: `\$\{__WEB_APP_BASE__\}\/\?auth=register` \}\)/);
 });

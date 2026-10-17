@@ -5,18 +5,15 @@ import process from 'node:process';
 import sharp from 'sharp';
 import { fileURLToPath } from 'node:url';
 import { EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
+import { buildSettings } from './build-settings.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = process.env.BUILD_OUTPUT_DIR
   ? path.resolve(process.env.BUILD_OUTPUT_DIR)
   : path.join(root, 'dist');
 const packageMetadata = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-const mode = process.env.BUILD_MODE === 'development' ? 'development' : 'production';
+const { target, mode, coreApiBase, gotitApiBase, webAppBase } = buildSettings(process.env);
 const webStorePackage = process.env.WEBSTORE_PACKAGE === '1';
-const coreApiBase = process.env.CORE_API_BASE ||
-  (mode === 'development' ? 'http://localhost:8080/api/v1' : 'https://rbase-core-api.onrender.com/api/v1');
-const gotitApiBase = process.env.GOTIT_API_BASE ||
-  (mode === 'development' ? 'http://localhost:3001/api/v1' : 'https://gotit-backend.onrender.com/api/v1');
 const googleClientId = process.env.GOOGLE_OAUTH_CLIENT_ID ||
   '336996428812-8vm54slmvpi95p9bf0c3a4bq3bemsmm0.apps.googleusercontent.com';
 
@@ -51,6 +48,7 @@ await build({
   define: {
     __CORE_API_BASE__: JSON.stringify(coreApiBase.replace(/\/$/u, '')),
     __GOTIT_API_BASE__: JSON.stringify(gotitApiBase.replace(/\/$/u, '')),
+    __WEB_APP_BASE__: JSON.stringify(webAppBase),
     __BUILD_MODE__: JSON.stringify(mode)
   }
 });
@@ -64,6 +62,12 @@ await Promise.all([
   cp(path.join(root, 'src/assets/gotit-logo.svg'), path.join(dist, 'assets/gotit-logo.svg')),
   cp(path.join(root, 'src/_locales'), path.join(dist, '_locales'), { recursive: true })
 ]);
+
+for (const html of ['popup.html', 'options.html']) {
+  const filename = path.join(dist, html);
+  const source = await readFile(filename, 'utf8');
+  await writeFile(filename, source.replaceAll('__WEB_APP_BASE__', webAppBase));
+}
 
 const manifest = {
   manifest_version: 3,
@@ -107,6 +111,7 @@ await Promise.all([16, 32, 48, 128].map((size) =>
   sharp(logo).resize(size, size).png().toFile(path.join(dist, 'icons', `icon${size}.png`))
 ));
 
-console.log(`Built GotIt extension (${mode}) in ${dist}`);
+console.log(`Built GotIt extension (${target}) in ${dist}`);
 console.log(`Core: ${coreApiBase}`);
 console.log(`GotIt: ${gotitApiBase}`);
+console.log(`Web: ${webAppBase}`);

@@ -764,7 +764,7 @@ element<HTMLButtonElement>('login-tab').addEventListener('click', () => {
   renderAuthMode();
 });
 element<HTMLButtonElement>('register-tab').addEventListener('click', () => {
-  void chrome.tabs.create({ url: 'https://gotit.rbaseapp.com/?auth=register' });
+  void chrome.tabs.create({ url: `${__WEB_APP_BASE__}/?auth=register` });
 });
 element<HTMLFormElement>('auth-form').addEventListener('submit', (event) => {
   event.preventDefault();

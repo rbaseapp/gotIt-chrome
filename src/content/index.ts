@@ -330,7 +330,7 @@ if (!state.__gotitContentLoaded) {
     practiceDescription.textContent = contentT('content.practiceDescription');
     practiceCopy.append(practiceTitle, practiceDescription);
     const practiceLink = document.createElement('a');
-    practiceLink.href = 'https://gotit.rbaseapp.com';
+    practiceLink.href = __WEB_APP_BASE__;
     practiceLink.target = '_blank';
     practiceLink.rel = 'noopener noreferrer';
     practiceLink.textContent = contentT('content.practiceAction');

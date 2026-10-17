@@ -5,12 +5,14 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { EXTENSION_ID, EXTENSION_PUBLIC_KEY } from './extension-identity.mjs';
+import { buildSettings } from './build-settings.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = process.env.BUILD_OUTPUT_DIR
   ? path.resolve(process.env.BUILD_OUTPUT_DIR)
   : path.join(root, 'dist');
 const webStorePackage = process.env.WEBSTORE_PACKAGE === '1';
+const settings = buildSettings(process.env);
 const manifest = JSON.parse(await readFile(path.join(dist, 'manifest.json'), 'utf8'));
 
 function leafKeys(value, prefix = '') {
@@ -65,6 +67,19 @@ assert.equal(manifest.content_security_policy.extension_pages, "script-src 'self
 const files = await readdir(dist, { recursive: true });
 const sourceFiles = files.filter((entry) => /\.(?:js|html|json)$/u.test(entry));
 const combined = (await Promise.all(sourceFiles.map((entry) => readFile(path.join(dist, entry), 'utf8')))).join('\n');
+assert.equal(combined.includes('__WEB_APP_BASE__'), false, 'Web links must be resolved during the build');
+const background = await readFile(path.join(dist, 'background.js'), 'utf8');
+assert.ok(background.includes(settings.coreApiBase), 'Authentication must use the selected Core API');
+assert.ok(background.includes(settings.gotitApiBase), 'Captures must use the selected GotIt API');
+for (const filename of ['content.js', 'popup.js', 'popup.html', 'options.html']) {
+  assert.ok((await readFile(path.join(dist, filename), 'utf8')).includes(settings.webAppBase),
+    `${filename} must open the website matching the capture environment`);
+}
+if (settings.target === 'dev') {
+  for (const productionOrigin of ['https://gotit.rbaseapp.com', 'https://gotit-backend.onrender.com', 'https://rbase-core-api.onrender.com']) {
+    assert.equal(combined.includes(productionOrigin), false, 'DEV packages must contain no production destinations');
+  }
+}
 for (const forbidden of [
   'api.anthropic.com',
   'translation.googleapis.com',
